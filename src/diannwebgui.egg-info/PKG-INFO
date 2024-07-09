@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: diannwebgui
+Version: 0.0.1
+Summary: bla bla bla
+Author-email: Patrick Garrett <pgarrett@scripps.edu>, Daniel Lu <dalu@scripps.edu>
+Classifier: Programming Language :: Python :: 3
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: streamlit
+
+bla bla bla

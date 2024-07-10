@@ -1,6 +1,6 @@
 import streamlit as st
-# import pandas as pd
-# import numpy as np
+import pandas as pd
+import numpy as np
 
 def input():
      st.title("Input")
@@ -71,7 +71,7 @@ def algorithm():
      checkbox4 = st.checkbox("Heuristic protein interface", value=True)
      checkbox5 = st.checkbox("No shared spectra", value=True)
 
-     dropdown1 = st.selectbox("Protein inference:", options=["Genes", "Isoform IDs", "Protein names (from FASTA)", "Genes (species-specific", "Off"])
+     dropdown1 = st.selectbox("Protein inference:", options=["Genes", "Isoform IDs", "Protein names (from FASTA)", "Genes (species-specific)", "Off"])
      dropdown1 = st.selectbox("Neural network classifier:", options=["Single-pass mode", "Off", "Double-pass mode"])
 
 if __name__ == "__main__":
@@ -79,4 +79,20 @@ if __name__ == "__main__":
     output()
     precursor_ion_generation()
     algorithm()
+
+# tabs = ["Input", "Output", "Precursor Ion Generation", "Algorithm"]
+#
+# selected_tab = st.sidebar.selectbox("Select a Tab:", tabs)
+#
+# if selected_tab == "Input":
+#      input()
+#
+# elif selected_tab == "Output":
+#      output()
+#
+# elif selected_tab == "Precursor Ion Generation":
+#      precursor_ion_generation()
+#
+# elif selected_tab == "Algorithm":
+#      algorithm()
 

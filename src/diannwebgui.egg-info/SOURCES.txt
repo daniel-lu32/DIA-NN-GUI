@@ -3,10 +3,16 @@ pyproject.toml
 setup.py
 src/diannwebgui/__init__.py
 src/diannwebgui/app.py
+src/diannwebgui/hpc_manager.py
 src/diannwebgui/run.py
+src/diannwebgui/utils.py
 src/diannwebgui.egg-info/PKG-INFO
 src/diannwebgui.egg-info/SOURCES.txt
 src/diannwebgui.egg-info/dependency_links.txt
 src/diannwebgui.egg-info/entry_points.txt
 src/diannwebgui.egg-info/requires.txt
 src/diannwebgui.egg-info/top_level.txt
+src/diannwebgui/pages/data.py
+src/diannwebgui/pages/projects.py
+src/diannwebgui/pages/search.py
+src/diannwebgui/pages/speclib.py

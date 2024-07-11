@@ -19,7 +19,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "streamlit",
+    "streamlit", "fs"
 ]
 
 [tool.setuptools]

@@ -4,14 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e9e30f68-43c8-43b9-ba1a-937bf7525792" name="Changes" comment="test">
-      <change afterPath="$PROJECT_DIR$/src/diannwebgui/pages/data.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/diannwebgui/pages/projects.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/diannwebgui/pages/search.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/diannwebgui/pages/speclib.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/diannwebgui/utils.py" afterDir="false" />
+    <list default="true" id="e9e30f68-43c8-43b9-ba1a-937bf7525792" name="Changes" comment="7/10/2024 end of day changes -dalu">
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_7_9_2024_4_50_PM_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_7_9_2024_4_50_PM_[Changes]1/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_7_9_2024_4_50_PM__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/diannwebgui/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/diannwebgui.egg-info/PKG-INFO" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui.egg-info/PKG-INFO" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/diannwebgui.egg-info/SOURCES.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui.egg-info/SOURCES.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/diannwebgui.egg-info/dependency_links.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui.egg-info/dependency_links.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/diannwebgui.egg-info/entry_points.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui.egg-info/entry_points.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/diannwebgui.egg-info/requires.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui.egg-info/requires.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/diannwebgui.egg-info/top_level.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui.egg-info/top_level.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/diannwebgui/pages/search.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/diannwebgui/pages/search.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,6 +67,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Python.speclib.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
@@ -90,7 +97,9 @@
       <option name="presentableId" value="Default" />
       <updated>1720548599527</updated>
       <workItem from="1720548605004" duration="16743000" />
-      <workItem from="1720628688349" duration="22928000" />
+      <workItem from="1720628688349" duration="25270000" />
+      <workItem from="1720714643452" duration="2655000" />
+      <workItem from="1720721694880" duration="7000000" />
     </task>
     <task id="LOCAL-00001" summary="7/9/2024">
       <option name="closed" value="true" />
@@ -172,7 +181,23 @@
       <option name="project" value="LOCAL" />
       <updated>1720569537625</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="7/10/2024 changes -dalu">
+      <option name="closed" value="true" />
+      <created>1720655806646</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1720655806646</updated>
+    </task>
+    <task id="LOCAL-00012" summary="7/10/2024 end of day changes -dalu">
+      <option name="closed" value="true" />
+      <created>1720725661033</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1720725661033</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -207,6 +232,11 @@
     <MESSAGE value="gitignore" />
     <MESSAGE value="remove .idea" />
     <MESSAGE value="test" />
-    <option name="LAST_COMMIT_MESSAGE" value="test" />
+    <MESSAGE value="7/10/2024 changes -dalu" />
+    <MESSAGE value="7/10/2024 end of day changes -dalu" />
+    <option name="LAST_COMMIT_MESSAGE" value="7/10/2024 end of day changes -dalu" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/DIA_NN_GUI$speclib.coverage" NAME="speclib Coverage Results" MODIFIED="1720722634924" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/diannwebgui/pages" />
   </component>
 </project>

@@ -14,7 +14,7 @@ selected_project = st.selectbox("Select Project:", options=fs.list_projects())
 
 @st.experimental_dialog("Add New Data")
 def upload_prompt():
-    data_files = st.file_uploader(label="Main output", accept_multiple_files=True)
+    data_files = st.file_uploader(label="Upload Data", accept_multiple_files=True)
     column1, column2 = st.columns(2)
     with column1:
         if st.button("Upload", use_container_width=True, type='primary'):

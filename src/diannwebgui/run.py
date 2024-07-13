@@ -16,7 +16,7 @@ def main():
     def signal_handler(sig, frame):
         print('Terminating Streamlit process...')
         process.terminate()
-        process.wait()
+        #process.wait(timeout=2)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)

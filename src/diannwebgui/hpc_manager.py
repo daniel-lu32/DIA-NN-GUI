@@ -4,7 +4,6 @@ from fs.ftpfs import FTPFS
 import json
 from fs.errors import ResourceNotFound, DirectoryExists
 
-
 class RemoteProjectFileSystem:
     def __init__(self, host, user, passwd, protocol='ftp'):
         home_path = f'/gpfs/home/{user}'  # Adjust as necessary
@@ -127,6 +126,74 @@ class RemoteProjectFileSystem:
             json.dump(data, config_file)
 
         print(f"Search '{search_name}' added to project '{project_name}'.")
+
+        command = "diann.exe"
+
+        data_directory = f'{project_name}/data'
+        data_files = self.project_fs.listdir(data_directory)
+        for data_file in data_files:
+            command += f" --f {data_directory}/{data_file}"
+
+        spec_lib_directory = f'{project_name}/spec_lib'
+        spec_lib_files = self.project_fs.listdir(spec_lib_directory)
+        for spec_lib_file in spec_lib_files:
+            command += f" --f {spec_lib_directory}/{spec_lib_file}"
+
+        command += " --threads " + str(data['threads'])
+        command += " --verbose " + str(data['log_level'])
+        command += " --out " + search_dir
+        command += " --qvalue " + str(data['precursor_fdr']/100)
+        if data['quantities_matrices']:
+            command += " --matrices"
+        if data['prosit']:
+            command += " --prosit"
+        if data['xics']:
+            command += " --xic"
+        command += " --unimod4"
+
+        if data['scan_window'] != 0:
+            command += " --window " + str(data['scan_window'])
+        if data['mass_accuracy'] != 0:
+            command += " --mass-acc " + str(data['mass_accuracy'])
+        if data['ms1_accuracy'] != 0:
+            command += " --mass-acc-ms1 " + str(data['ms1_accuracy'])
+
+        if (data['neural_network_classifier'] == "Double-Pass Mode"):
+            command += " --double-search"
+        elif (data['neural_network_classifier'] == "Off"):
+            command += " --no-nn"
+
+        if data['unrelated_runs']:
+            command += " --individual-mass-acc --individual-windows"
+        if data['peptidoforms']:
+            command += " --peptidoforms"
+
+        if not data['no_shared_spectra']:
+            command += " --int-removal 0"
+
+        if data['mbr']:
+            command += " --reanalyse"
+
+        if ['heuristic_protein_interface']:
+            command += " --relaxed-prot-inf"
+        command += " --rt-profiling"
+
+        if (data['protein_inference'] == "Isoform IDs"):
+            command += " --pg-level 0"
+        elif (data['protein_inference'] == "Protein Names (from FASTA)"):
+            command += " --pg-level 1"
+        elif (data['protein_inference'] == "Genes (Species-Specific)"):
+            command += " --pg-level 2 --species-genes"
+        elif (data['protein_inference'] == "Off"):
+            command += " --no-prot-inf"
+
+        if not (data['additional_options'] == ""):
+            command += " " + data['additional_options']
+
+        command_path = f'{search_dir}/command.json'
+        with self.project_fs.open(command_path, 'w') as command_file:
+            json.dump(command, command_file)
+
 
     def remove_search(self, project_name, search_name):
         project_dir = f'{project_name}'

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 def input():
-     st.title("Input")
+     st.title("THIS PAGE IS NO LONGER BEING USED")
      fileupload1 = st.file_uploader(label="Raw", type=[".raw", ".wiff", ".mzML", ".dia"])
      fileupload2 = st.file_uploader(label=".d (DIA)", type=".d")
 

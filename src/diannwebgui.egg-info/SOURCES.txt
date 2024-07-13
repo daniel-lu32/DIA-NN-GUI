@@ -3,6 +3,7 @@ pyproject.toml
 setup.py
 src/diannwebgui/__init__.py
 src/diannwebgui/app.py
+src/diannwebgui/data.py
 src/diannwebgui/hpc_manager.py
 src/diannwebgui/run.py
 src/diannwebgui/utils.py

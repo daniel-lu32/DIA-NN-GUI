@@ -1,1 +1,1 @@
-bla bla bla
+Change the username and password in line 7 of utils.py to your HPC account.

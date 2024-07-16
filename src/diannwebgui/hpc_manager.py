@@ -20,8 +20,18 @@ class RemoteProjectFileSystem:
 
         self.project_fs = home_fs.opendir('projects')
 
-    def get_file_contents(self, project_name, file_name):
+    def get_data_file_contents(self, project_name, file_name):
         file_path = f'{project_name}/data/{file_name}'
+        with self.project_fs.open(file_path, 'r') as file:
+            return file.read()
+
+    def get_spec_lib_contents(self, project_name, file_name):
+        file_path = f'{project_name}/spec_lib/{file_name}'
+        with self.project_fs.open(file_path, 'r') as file:
+            return file.read()
+
+    def get_search_contents(self, project_name, search_name, file_name):
+        file_path = f'{project_name}/search/{search_name}/{file_name}'
         with self.project_fs.open(file_path, 'r') as file:
             return file.read()
 
@@ -34,6 +44,16 @@ class RemoteProjectFileSystem:
         project_fs.makedir('data')
         project_fs.makedir('search')
         project_fs.makedir('spec_lib')
+
+    def remove_project(self, project_name):
+        project_path = f'{project_name}'
+        if self.project_fs.exists(project_path):
+            self.project_fs.removetree(project_path)
+        else:
+            raise ResourceNotFound(f"Project '{project_name}' does not exist.")
+
+    def list_projects(self):
+        return self.project_fs.listdir('.')
 
     def add_data_file(self, project_name, file_name, data):
         data_path = f'{project_name}/data/{file_name}'
@@ -61,54 +81,26 @@ class RemoteProjectFileSystem:
 
         self.project_fs.remove(data_path)
 
-    def list_projects(self):
-        return self.project_fs.listdir('.')
-
     def list_data_files(self, project_name):
         data_dir = f'{project_name}/data'
         if not self.project_fs.exists(data_dir):
             raise ResourceNotFound(f"No data directory found for project '{project_name}'.")
         return self.project_fs.listdir(data_dir)
 
-    def remove_project(self, project_name):
-        project_path = f'{project_name}'
-        if self.project_fs.exists(project_path):
-            self.project_fs.removetree(project_path)
-        else:
-            raise ResourceNotFound(f"Project '{project_name}' does not exist.")
-
     def add_spec_lib(self, project_name, file_name, data):
-        data_path = f'{project_name}/spec_lib/{file_name}'
-        spec_lib_dir = f'{project_name}/spec_lib'
-
-        if not self.project_fs.exists(spec_lib_dir):
-            raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'data' directory.")
-
-        # Check if any file already exists in the spec_lib directory
-        if self.project_fs.listdir(spec_lib_dir):
-            raise FileExistsError(f"A spec lib file already exists in project '{project_name}'.")
-
-        with self.project_fs.open(data_path, 'w') as data_file:
-            data_file.write(data)
-
-    def remove_spec_lib(self, project_name):
-        spec_lib_dir = f'{project_name}/spec_lib'
-
-        if not self.project_fs.exists(spec_lib_dir):
+        spec_lib_path = f'{project_name}/spec_lib/{file_name}'
+        if not self.project_fs.exists(f'{project_name}/spec_lib'):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'spec_lib' directory.")
 
-        # List all files in the spec_lib directory
-        files = self.project_fs.listdir(spec_lib_dir)
+        with self.project_fs.open(spec_lib_path, 'w') as spec_lib_file:
+            spec_lib_file.write(data)
 
-        if not files:
-            raise ResourceNotFound(f"No spec lib files found in project '{project_name}'.")
+    def remove_spec_lib(self, project_name, file_name):
+        spec_lib_path = f'{project_name}/spec_lib/{file_name}'
+        if not self.project_fs.exists(spec_lib_path):
+            raise ResourceNotFound(f"Spectral library file '{file_name}' not found in project '{project_name}'.")
 
-        # Remove each file in the spec_lib directory
-        for file in files:
-            file_path = f'{spec_lib_dir}/{file}'
-            self.project_fs.remove(file_path)
-
-        print(f"Removed spec lib files from project '{project_name}'.")
+        self.project_fs.remove(spec_lib_path)
 
     def list_spec_lib_files(self, project_name):
         spec_lib_dir = f'{project_name}/spec_lib'
@@ -135,8 +127,6 @@ class RemoteProjectFileSystem:
         config_path = f'{search_dir}/config.json'
         with self.project_fs.open(config_path, 'w') as config_file:
             json.dump(data, config_file)
-
-        print(f"Search '{search_name}' added to project '{project_name}'.")
 
         command = "diann.exe"
 
@@ -187,6 +177,7 @@ class RemoteProjectFileSystem:
 
         if ['heuristic_protein_interface']:
             command += " --relaxed-prot-inf"
+
         command += " --rt-profiling"
 
         if (data['protein_inference'] == "Isoform IDs"):
@@ -220,7 +211,6 @@ class RemoteProjectFileSystem:
         # Remove the search directory and its contents
         self.project_fs.removetree(search_dir)
 
-        print(f"Search '{search_name}' removed from project '{project_name}'.")
     def list_searches(self, project_name):
         search_dir = f'{project_name}/search'
         if not self.project_fs.exists(search_dir):

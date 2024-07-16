@@ -20,6 +20,11 @@ class RemoteProjectFileSystem:
 
         self.project_fs = home_fs.opendir('projects')
 
+    def get_file_contents(self, project_name, file_name):
+        file_path = f'{project_name}/data/{file_name}'
+        with self.project_fs.open(file_path, 'r') as file:
+            return file.read()
+
     def create_project(self, project_name):
         project_path = f'{project_name}'
         if self.project_fs.exists(project_path):
@@ -104,6 +109,12 @@ class RemoteProjectFileSystem:
             self.project_fs.remove(file_path)
 
         print(f"Removed spec lib files from project '{project_name}'.")
+
+    def list_spec_lib_files(self, project_name):
+        spec_lib_dir = f'{project_name}/spec_lib'
+        if not self.project_fs.exists(spec_lib_dir):
+            raise ResourceNotFound(f"No spectral library directory found for project '{project_name}'.")
+        return self.project_fs.listdir(spec_lib_dir)
 
     def add_search(self, project_name, search_name, data):
         project_dir = f'{project_name}'
@@ -194,7 +205,6 @@ class RemoteProjectFileSystem:
         with self.project_fs.open(command_path, 'w') as command_file:
             json.dump(command, command_file)
 
-
     def remove_search(self, project_name, search_name):
         project_dir = f'{project_name}'
         search_dir = f'{project_name}/search/{search_name}'
@@ -211,7 +221,11 @@ class RemoteProjectFileSystem:
         self.project_fs.removetree(search_dir)
 
         print(f"Search '{search_name}' removed from project '{project_name}'.")
-
+    def list_searches(self, project_name):
+        search_dir = f'{project_name}/search'
+        if not self.project_fs.exists(search_dir):
+            raise ResourceNotFound(f"No search directory found for project '{project_name}'.")
+        return self.project_fs.listdir(search_dir)
 
 if __name__ == "__main__":
     # Connect to FTP server

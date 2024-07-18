@@ -138,9 +138,8 @@ class RemoteProjectFileSystem:
         spec_lib_directory = f'{project_name}/spec_lib'
         spec_lib_files = self.project_fs.listdir(spec_lib_directory)
         for spec_lib_file in spec_lib_files:
-            command += f" --f {spec_lib_directory}/{spec_lib_file}"
+            command += f" --lib {spec_lib_directory}/{spec_lib_file}"
 
-        command += " --threads " + str(data['threads'])
         command += " --verbose " + str(data['log_level'])
         command += " --out " + search_dir
         command += " --qvalue " + str(data['precursor_fdr']/100)

@@ -1,18 +1,54 @@
 import streamlit as st
 import pandas as pd
 from utils import get_fs
+import paramiko
+from scp import SCPClient
 
-st.title("DIA-NN GUI")
-fs = get_fs()
+def create_scp_client(server_ip, username, password):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(server_ip, username=username, password=password)
+    return SCPClient(ssh.get_transport()), ssh
 
-selected_project = st.selectbox("Select Project:", options=fs.list_projects())
+def login():
+    st.title("Login")
+    server_ip = st.text_input("Server IP", value="login02.scripps.edu")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
-t1, t2, t3, t4 = st.tabs(["Projects", "Data Files", "Spectral Libraries", "Searches"])
+    if st.button("Login", type='primary'):
+        try:
+            scp, ssh = create_scp_client(server_ip, username, password)
+            scp.close()
+            ssh.close()
+            st.session_state['authenticated'] = True
+            st.session_state['server_ip'] = server_ip
+            st.session_state['username'] = username
+            st.session_state['password'] = password
+            st.success("Login successful!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Login failed: {str(e)}")
+
+if 'authenticated' not in st.session_state:
+    st.session_state['authenticated'] = False
+
+if not st.session_state['authenticated']:
+    login()
+    st.stop()
 
 if 'selected_files' not in st.session_state:
     st.session_state.selected_files = []
 if 'file_data' not in st.session_state:
     st.session_state.file_data = {}
+
+fs = get_fs(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'])
+
+st.title("DIA-NN GUI")
+
+selected_project = st.selectbox("Select Project:", options=fs.list_projects())
+
+t1, t2, t3, t4 = st.tabs(["Projects", "Data Files", "Spectral Libraries", "Searches"])
 
 @st.experimental_dialog("Add Project")
 def projects_add_dialogue():
@@ -31,13 +67,13 @@ def projects_delete_dialogue(df, indices):
     to_be_deleted = st.dataframe(df.iloc[indices]['Projects'], use_container_width=True, hide_index=True)
     column1, column2 = st.columns(2)
     with column1:
-        if st.button("Confirm", use_container_width=True, type='primary', key="projects_delete_dialogue_confirm"):
+        if st.button("Confirm", use_container_width=True, type='secondary', key="projects_delete_dialogue_confirm"):
             for index in indices:
                 project_name = df.iloc[index]['Projects']
                 fs.remove_project(project_name)
             st.rerun()
     with column2:
-        if st.button("Cancel", use_container_width=True, type='secondary', key="projects_delete_dialogue_cancel"):
+        if st.button("Cancel", use_container_width=True, type='primary', key="projects_delete_dialogue_cancel"):
             st.rerun()
 
 with t1:
@@ -55,7 +91,7 @@ with t1:
 
 @st.experimental_dialog("Add Data Files")
 def data_add_dialogue():
-    data_files = st.file_uploader(label="Upload Data Files", type=[".dia", ".tar", ".zip", ".raw"], accept_multiple_files=True)
+    data_files = st.file_uploader(label="Upload Data Files", accept_multiple_files=True) #type=[".dia", ".tar", ".zip", ".raw"],
     column1, column2 = st.columns(2)
     with column1:
         if st.button("Confirm", use_container_width=True, type='primary', key="data_add_dialogue_confirm"):
@@ -71,13 +107,13 @@ def data_delete_dialogue(df, indices):
     to_be_deleted = st.dataframe(df.iloc[indices]['Data Files'], use_container_width=True, hide_index=True)
     column1, column2 = st.columns(2)
     with column1:
-        if st.button("Confirm", use_container_width=True, type='primary', key="data_delete_dialogue_confirm"):
+        if st.button("Confirm", use_container_width=True, type='secondary', key="data_delete_dialogue_confirm"):
             for index in indices:
                 file_name = df.iloc[index]['Data Files']
                 fs.remove_data_file(selected_project, file_name)
             st.rerun()
     with column2:
-        if st.button("Cancel", use_container_width=True, type='secondary', key="data_delete_dialogue_cancel"):
+        if st.button("Cancel", use_container_width=True, type='primary', key="data_delete_dialogue_cancel"):
             st.rerun()
 
 @st.experimental_dialog("Download Data File")
@@ -154,13 +190,13 @@ def spec_lib_delete_dialogue(df, indices):
     to_be_deleted = st.dataframe(df.iloc[indices]['Spectral Libraries'], use_container_width=True, hide_index=True)
     column1, column2 = st.columns(2)
     with column1:
-        if st.button("Confirm", use_container_width=True, type='primary', key="spec_lib_delete_dialogue_confirm"):
+        if st.button("Confirm", use_container_width=True, type='secondary', key="spec_lib_delete_dialogue_confirm"):
             for index in indices:
                 file_name = df.iloc[index]['Spectral Libraries']
                 fs.remove_spec_lib(selected_project, file_name)
             st.rerun()
     with column2:
-        if st.button("Cancel", use_container_width=True, type='secondary', key="spec_lib_delete_dialogue_cancel"):
+        if st.button("Cancel", use_container_width=True, type='primary', key="spec_lib_delete_dialogue_cancel"):
             st.rerun()
 
 @st.experimental_dialog("Download Spectral Library")
@@ -219,17 +255,45 @@ with t3:
             if st.button("Download", use_container_width=True, type='secondary', key="spec_lib_download"):
                 if selected_indices:
                     spec_lib_download_dialogue(df, selected_indices)
+
+def run(command, search_name):
+    script = f"""#!/bin/sh
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=20
+#SBATCH --mem=50Gb
+#SBATCH --partition=highmem
+#SBATCH --time=240:00:00
+
+
+cd $SLURM_SUBMIT_DIR
+
+/gpfs/home/rpark/cluster/DiaNN.sif --threads 20 {command}
+"""
+
+    # TODO: finish this section (purpose: run "script" on the HPC in the correct folder)
+    ssh = create_scp_client(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'])[1]
+    ssh.exec_command(script)
+
+    stdin, stdout, stderr = ssh.exec_command(f"sbatch /gpfs/home/{fs.get_user}/projects/search/{search_name}/{script}")
+
+    st.write(stderr.read().decode())
+
+    job_id = stdout.read().decode().strip().split()[-1]
+    ssh.close()
+
 @st.experimental_dialog("Add Search")
 def search_add_dialogue():
     search_name = st.text_input("Search Name:")
 
     search_parameters = {}
+
+    search_parameters['projects_path'] = f'/gpfs/home/{fs.get_user()}/projects'
     search_parameters['precursor_fdr'] = st.number_input("Precursor FDR (%):", min_value=0.01, max_value=100.0, value=1.0)
     search_parameters['log_level'] = st.number_input("Log Level (%):", min_value=0, max_value=5, value=1)
     search_parameters['quantities_matrices'] = st.checkbox("Quantities Matrices", value=True)
     search_parameters['prosit'] = st.checkbox("Generate Prosit Input from FASTA or Spectral Library", value=False)
     search_parameters['xics'] = st.checkbox("XICs", value=False)
-    search_parameters['additional_options'] = st.text_input("Additional Options:")
     search_parameters['mass_accuracy'] = st.number_input("Mass Accuracy:", min_value=0, max_value=100, value=0)
     search_parameters['ms1_accuracy'] = st.number_input("MS1 Accuracy:", min_value=0, max_value=100, value=0)
     search_parameters['scan_window'] = st.number_input("Scan Window:", min_value=0, max_value=1000, value=0)
@@ -240,27 +304,51 @@ def search_add_dialogue():
     search_parameters['no_shared_spectra'] = st.checkbox("No Shared Spectra", value=True)
     search_parameters['protein_inference'] = st.selectbox("Protein Inference:", options=["Genes", "Isoform IDs", "Protein Names (from FASTA)", "Genes (Species-Specific)", "Off"])
     search_parameters['neural_network_classifier'] = st.selectbox("Neural Network Classifier:", options=["Single-Pass Mode", "Off", "Double-Pass Mode"])
+    search_parameters['quantification_strategy'] = st.selectbox("Quantification Strategy:", options=["QuantUMS (high precision)", "Legacy (direct)", "QuantUMS (high accuracy)"])
+    search_parameters['cross-run_normalization'] = st.selectbox("Cross-Run Normalization:", options=["RT-dependent", "Global", "RT & signal-dep. (experimental)", "Off"])
+    search_parameters['library_generation'] = st.selectbox("Library Generation:", options=["IDs, RT & IM profiling", "IDs profiling", "Smart profiling", "Full profiling"])
+    search_parameters['speed_and_ram_usage'] = st.selectbox("Speed and RAM Usage", options=["Optimal results", "Low RAM usage", "Low RAM & high speed", "Ultra-fast"])
+
+    # TODO: add options from the "Precursor Ion Generation" section of DIA-NN
+    # checkbox1 = st.checkbox("FASTA digest for library-free search / library generation", value=False)
+    # checkbox2 = st.checkbox("Deep learning-based spectra, RTs, and IMs prediction", value=False)
+    #
+    # dropdown1 = st.selectbox("Protease:", options=["Trypsin/P", "Trypsin", "Lys-C", "Chymotrypsin", "AspN", "GluC"])
+    #
+    # number1 = st.number_input("Missed cleavages:", min_value=0, max_value=100, value=1)
+    # number2 = st.number_input("Maximum number of variable modifications:", min_value=0, max_value=100, value=0)
+    #
+    # checkbox3 = st.checkbox("N-term M excision", value=True)
+    # checkbox4 = st.checkbox("C carbamidomethylation", value=True)
+    # checkbox5 = st.checkbox("Ox(M)", value=False)
+    # checkbox6 = st.checkbox("Ac(N-term)", value=False)
+    # checkbox7 = st.checkbox("Phospho", value=False)
+    # checkbox8 = st.checkbox("K-GG", value=False)
+
+    search_parameters['additional_options'] = st.text_input("Additional Options:")
 
     column1, column2 = st.columns(2)
     with column1:
         if st.button("Confirm", use_container_width=True, type='primary', key="search_add_dialogue_confirm"):
-            fs.add_search(selected_project, search_name, search_parameters)
+            command = fs.add_search(selected_project, search_name, search_parameters)
+            run(command, search_name)
             st.rerun()
     with column2:
         if st.button("Cancel", use_container_width=True, type='secondary', key="search_add_dialogue_cancel"):
             st.rerun()
+
 @st.experimental_dialog(f"Are you sure you want to delete these searches?")
 def search_delete_dialogue(df, indices):
     to_be_deleted = st.dataframe(df.iloc[indices]['Searches'], use_container_width=True, hide_index=True)
     column1, column2 = st.columns(2)
     with column1:
-        if st.button("Confirm", use_container_width=True, type='primary', key="search_delete_dialogue_confirm"):
+        if st.button("Confirm", use_container_width=True, type='secondary', key="search_delete_dialogue_confirm"):
             for index in indices:
                 file_name = df.iloc[index]['Searches']
                 fs.remove_search(selected_project, file_name)
             st.rerun()
     with column2:
-        if st.button("Cancel", use_container_width=True, type='secondary', key="search_delete_dialogue_cancel"):
+        if st.button("Cancel", use_container_width=True, type='primary', key="search_delete_dialogue_cancel"):
             st.rerun()
 
 @st.experimental_dialog("Download Search")

@@ -1,8 +1,7 @@
 import streamlit as st
-
 from hpc_manager import RemoteProjectFileSystem
 
 @st.cache_resource
-def get_fs():
-    fs = RemoteProjectFileSystem('login02.scripps.edu', '', '', protocol='sftp')
+def get_fs(host, username, password):
+    fs = RemoteProjectFileSystem(host, username, password, protocol= 'sftp')
     return fs

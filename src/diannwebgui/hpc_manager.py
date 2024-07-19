@@ -1,11 +1,11 @@
-from fs.errors import ResourceNotFound
 from fs.sshfs import SSHFS
 from fs.ftpfs import FTPFS
-import json
 from fs.errors import ResourceNotFound, DirectoryExists
+import json
 
 class RemoteProjectFileSystem:
     def __init__(self, host, user, passwd, protocol='ftp'):
+        self._user = user
         home_path = f'/gpfs/home/{user}'  # Adjust as necessary
         if protocol == 'ftp':
             self.fs = FTPFS(host, user, passwd)
@@ -19,6 +19,9 @@ class RemoteProjectFileSystem:
             home_fs.makedir('projects')
 
         self.project_fs = home_fs.opendir('projects')
+
+    def get_user(self):
+        return self._user
 
     def get_data_file_contents(self, project_name, file_name):
         file_path = f'{project_name}/data/{file_name}'
@@ -62,17 +65,6 @@ class RemoteProjectFileSystem:
 
         with self.project_fs.open(data_path, 'w') as data_file:
             data_file.write(data)
-
-    def move_data_file(self, project_name, file_name, new_file_name, move: bool = True):
-        data_path = f'{project_name}/data/{file_name}'
-        new_data_path = f'{project_name}/data/{new_file_name}'
-        if not self.project_fs.exists(data_path):
-            raise ResourceNotFound(f"Data file '{file_name}' not found in project '{project_name}'.")
-
-        if move:
-            self.project_fs.move(data_path, new_data_path)
-        else:
-            self.project_fs.copy(data_path, new_data_path)
 
     def remove_data_file(self, project_name, file_name):
         data_path = f'{project_name}/data/{file_name}'
@@ -128,27 +120,38 @@ class RemoteProjectFileSystem:
         with self.project_fs.open(config_path, 'w') as config_file:
             json.dump(data, config_file)
 
-        command = "diann.exe"
+        # TODO: add command additions from the "Precursor Ion Generation" section of DIA-NN
+        command = ""
 
         data_directory = f'{project_name}/data'
         data_files = self.project_fs.listdir(data_directory)
         for data_file in data_files:
-            command += f" --f {data_directory}/{data_file}"
+            command += f" --f {data['projects_path']}/{data_directory}/{data_file}"
 
         spec_lib_directory = f'{project_name}/spec_lib'
         spec_lib_files = self.project_fs.listdir(spec_lib_directory)
         for spec_lib_file in spec_lib_files:
-            command += f" --lib {spec_lib_directory}/{spec_lib_file}"
+            command += f" --lib {data['projects_path']}/{spec_lib_directory}/{spec_lib_file}"
 
         command += " --verbose " + str(data['log_level'])
-        command += " --out " + search_dir
+        command += " --out " + data['projects_path'] + "/" + search_dir
         command += " --qvalue " + str(data['precursor_fdr']/100)
+
         if data['quantities_matrices']:
             command += " --matrices"
+
+        if data['speed_and_ram_usage'] == "Low RAM usage":
+            command += " --min-corr 1.0 --corr-diff 1.0 --time-corr-only"
+        elif data['speed_and_ram_usage'] == "Low RAM & high speed":
+            command += " --min-corr 2.0 --corr-diff 1.0 --time-corr-only"
+        elif data['speed_and_ram_usage'] == "Ultra-fast":
+            command += " --min-corr 2.0 --corr-diff 1.0 --time-corr-only --extracted-ms1"
+
         if data['prosit']:
             command += " --prosit"
         if data['xics']:
             command += " --xic"
+
         command += " --unimod4"
 
         if data['scan_window'] != 0:
@@ -177,7 +180,12 @@ class RemoteProjectFileSystem:
         if ['heuristic_protein_interface']:
             command += " --relaxed-prot-inf"
 
-        command += " --rt-profiling"
+        if (data['library_generation'] == "IDs profiling"):
+            command += " --id-profiling"
+        elif (data['library_generation'] == "IDs, RT and IM profiling"):
+            command += " --rt-profiling"
+        elif (data['library_generation'] == "Smart profiling"):
+            command += " --smart-profiling"
 
         if (data['protein_inference'] == "Isoform IDs"):
             command += " --pg-level 0"
@@ -188,12 +196,26 @@ class RemoteProjectFileSystem:
         elif (data['protein_inference'] == "Off"):
             command += " --no-prot-inf"
 
+        if (data['quantification_strategy'] == "Legacy (direct)"):
+            command += " --direct-quant"
+        elif (data['quantification_strategy'] == "QuantUMS (high accuracy)"):
+            command += " --high-acc"
+
+        if (data['cross-run_normalization'] == "Global"):
+            command += " --global-norm"
+        elif (data['cross-run_normalization'] == "RT & signal-dep. (experimental)"):
+            command += " --sig-norm"
+        elif (data['cross-run_normalization'] == "Off"):
+            command += " --no-norm"
+
         if not (data['additional_options'] == ""):
             command += " " + data['additional_options']
 
         command_path = f'{search_dir}/command.json'
         with self.project_fs.open(command_path, 'w') as command_file:
             json.dump(command, command_file)
+
+        return command
 
     def remove_search(self, project_name, search_name):
         project_dir = f'{project_name}'

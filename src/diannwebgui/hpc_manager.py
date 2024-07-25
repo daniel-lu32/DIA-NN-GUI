@@ -6,12 +6,15 @@ from fs.path import join
 from fs.osfs import OSFS
 
 import streamlit as st
-import pandas as pd
 
-from src.diannwebgui.pages.gui import create_scp_client
-from utils import get_fs
 import paramiko
 from scp import SCPClient
+
+def create_scp_client(server_ip, username, password):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(server_ip, username=username, password=password)
+    return SCPClient(ssh.get_transport()), ssh
 
 class RemoteProjectFileSystem:
     def __init__(self, host, user, passwd, protocol='ftp'):
@@ -226,17 +229,17 @@ class RemoteProjectFileSystem:
             json.dump(command, command_file)
 
         script = f"""#!/bin/sh
-        #SBATCH --nodes=1
-        #SBATCH --ntasks=1
-        #SBATCH --cpus-per-task=20
-        #SBATCH --mem=50Gb
-        #SBATCH --partition=highmem
-        #SBATCH --time=240:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=20
+#SBATCH --mem=50Gb
+#SBATCH --partition=highmem
+#SBATCH --time=240:00:00
 
-        cd $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
 
-        /gpfs/home/rpark/cluster/DiaNN.sif --threads 20 {command}
-        """
+/gpfs/home/rpark/cluster/DiaNN.sif --threads 20 {command}
+"""
         script_replaced = script.replace("\r\n", "\n").replace("\r", "\n")
         script_path = f"{project_name}/search/{search_name}/search_command.sh"
 

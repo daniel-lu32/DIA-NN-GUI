@@ -2,6 +2,16 @@ from fs.sshfs import SSHFS
 from fs.ftpfs import FTPFS
 from fs.errors import ResourceNotFound, DirectoryExists
 import json
+from fs.path import join
+from fs.osfs import OSFS
+
+import streamlit as st
+import pandas as pd
+
+from src.diannwebgui.pages.gui import create_scp_client
+from utils import get_fs
+import paramiko
+from scp import SCPClient
 
 class RemoteProjectFileSystem:
     def __init__(self, host, user, passwd, protocol='ftp'):
@@ -116,9 +126,9 @@ class RemoteProjectFileSystem:
         self.project_fs.makedir(search_dir, recreate=True)
 
         # Save data to the new folder as config.json
-        config_path = f'{search_dir}/config.json'
-        with self.project_fs.open(config_path, 'w') as config_file:
-            json.dump(data, config_file)
+        # config_path = f'{search_dir}/config.json'
+        # with self.project_fs.open(config_path, 'w') as config_file:
+        #     json.dump(data, config_file)
 
         # TODO: add command additions from the "Precursor Ion Generation" section of DIA-NN
         command = ""
@@ -215,7 +225,35 @@ class RemoteProjectFileSystem:
         with self.project_fs.open(command_path, 'w') as command_file:
             json.dump(command, command_file)
 
-        return command
+        script = f"""#!/bin/sh
+        #SBATCH --nodes=1
+        #SBATCH --ntasks=1
+        #SBATCH --cpus-per-task=20
+        #SBATCH --mem=50Gb
+        #SBATCH --partition=highmem
+        #SBATCH --time=240:00:00
+
+        cd $SLURM_SUBMIT_DIR
+
+        /gpfs/home/rpark/cluster/DiaNN.sif --threads 20 {command}
+        """
+        script_replaced = script.replace("\r\n", "\n").replace("\r", "\n")
+        script_path = f"{project_name}/search/{search_name}/search_command.sh"
+
+        with self.project_fs.open(script_path, 'w') as search_command_file:
+            search_command_file.write(script_replaced)
+
+    def run_search(self, project_name, search_name):
+        ssh = create_scp_client(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'])
+
+        home_fs = OSFS('~/')
+        projects_path = home_fs.getsyspath('projects')
+
+        script_path = f"{projects_path}/{project_name}/search/{search_name}/search_command.sh"
+        ssh.exec_command(f"chmod +x {script_path}")
+        stdin, stdout, stderr = ssh.exec_command(f"sbatch {script_path}")
+        st.write(stderr.read().decode())
+        ssh.close()
 
     def remove_search(self, project_name, search_name):
         project_dir = f'{project_name}'
@@ -233,7 +271,7 @@ class RemoteProjectFileSystem:
         self.project_fs.removetree(search_dir)
 
     def list_searches(self, project_name):
-        search_dir = f'{project_name}/search'
+        search_dir = join(project_name, 'search')
         if not self.project_fs.exists(search_dir):
             raise ResourceNotFound(f"No search directory found for project '{project_name}'.")
         return self.project_fs.listdir(search_dir)
@@ -270,6 +308,8 @@ if __name__ == "__main__":
         pfs.add_search('project1', 'search1', {'param1': 'value1', 'param2': 'value2'})
     except Exception as e:
         print(e)
+
+    print(pfs.get_search_path('project1', 'search1'))
 
     # Remove the search from the project
     try:

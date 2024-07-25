@@ -305,7 +305,7 @@ def search_add_dialogue():
     with column1:
         if st.button("Confirm", use_container_width=True, type="primary", key="search_add_dialogue_confirm"):
             fs.add_search(selected_project, search_name, search_parameters)
-            fs.run_search(selected_project, search_name)
+            # fs.run_search(selected_project, search_name)
             st.rerun()
     with column2:
         if st.button("Cancel", use_container_width=True, type="secondary", key="search_add_dialogue_cancel"):

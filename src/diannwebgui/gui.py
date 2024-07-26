@@ -297,7 +297,7 @@ def search_download_dialogue(project: str, search: str):
 with t4:
     if fs.list_projects():
         st.subheader("Searches")
-        st.markdown("Click \"Add\" to configure search parameters and start a new search. To delete, select searches and click \"Delete.\" To download the command to run DIA-NN, select ONE search and click \"Download.\"")
+        st.markdown("Click \"Add\" to configure search parameters and start a new search. To delete, select searches and click \"Delete.\" To download the .sh file to run DIA-NN on the HPC, select ONE search and click \"Download.\"")
         df = pd.DataFrame(fs.list_searches(selected_project), columns=['Name'])
         selection = st.dataframe(df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key='search_df')
         selected_indices = [row for row in selection['selection']['rows']]

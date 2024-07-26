@@ -1,9 +1,11 @@
 from fs.sshfs import SSHFS
 from fs.ftpfs import FTPFS
+from fs.osfs import OSFS
 from fs.errors import ResourceNotFound, DirectoryExists
 import json
 from fs.path import join
 from fs.osfs import OSFS
+from typing import Any, Dict, List, Literal
 
 import streamlit as st
 
@@ -17,15 +19,20 @@ def create_scp_client(server_ip, username, password):
     return SCPClient(ssh.get_transport()), ssh
 
 class RemoteProjectFileSystem:
-    def __init__(self, host, user, passwd, protocol='ftp'):
-        home_path = f'/gpfs/home/{user}'  # Adjust as necessary
-        self._home_path = home_path
+    def __init__(self, host: str, user: str, passwd: str, protocol: Literal['ftp', 'sftp', 'osf']='ftp'):
         if protocol == 'ftp':
             self.fs = FTPFS(host, user, passwd)
+            home_path = f'/gpfs/home/{user}'  # Adjust as necessary
         elif protocol == 'sftp':
             self.fs = SSHFS(host, user=user, passwd=passwd)
+            home_path = f'/gpfs/home/{user}'  # Adjust as necessary
+        elif protocol == 'osf':
+            self.fs = OSFS('.')
+            home_path = '.'
         else:
-            raise ValueError("Unsupported protocol. Use 'ftp' or 'sftp'.")
+            raise ValueError("Unsupported protocol. Use 'ftp' or 'sftp' or 'osf'")
+        
+        self._home_path = home_path
 
         home_fs = self.fs.opendir(home_path)
         if not home_fs.exists('projects'):
@@ -33,22 +40,22 @@ class RemoteProjectFileSystem:
 
         self.project_fs = home_fs.opendir('projects')
 
-    def get_data_file_contents(self, project_name, file_name):
+    def get_data_file_contents(self, project_name: str, file_name: str) -> bytes:
         file_path = f'{project_name}/data/{file_name}'
-        with self.project_fs.open(file_path, 'r') as file:
+        with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
 
-    def get_spec_lib_contents(self, project_name, file_name):
+    def get_spec_lib_contents(self, project_name: str, file_name: str) -> bytes:
         file_path = f'{project_name}/spec_lib/{file_name}'
-        with self.project_fs.open(file_path, 'r') as file:
+        with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
 
-    def get_search_contents(self, project_name, search_name, file_name):
+    def get_search_contents(self, project_name: str, search_name: str, file_name: str) -> bytes:
         file_path = f'{project_name}/search/{search_name}/{file_name}'
-        with self.project_fs.open(file_path, 'r') as file:
+        with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
 
-    def create_project(self, project_name):
+    def create_project(self, project_name: str):
         project_path = f'{project_name}'
         if self.project_fs.exists(project_path):
             raise FileExistsError(f"Project '{project_name}' already exists.")
@@ -58,59 +65,59 @@ class RemoteProjectFileSystem:
         project_fs.makedir('search')
         project_fs.makedir('spec_lib')
 
-    def remove_project(self, project_name):
+    def remove_project(self, project_name: str):
         project_path = f'{project_name}'
         if self.project_fs.exists(project_path):
             self.project_fs.removetree(project_path)
         else:
             raise ResourceNotFound(f"Project '{project_name}' does not exist.")
 
-    def list_projects(self):
+    def list_projects(self) -> List[str]:
         return self.project_fs.listdir('.')
 
-    def add_data_file(self, project_name, file_name, data):
+    def add_data_file(self, project_name: str, file_name: str, data: bytes):
         data_path = f'{project_name}/data/{file_name}'
         if not self.project_fs.exists(f'{project_name}/data'):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'data' directory.")
 
-        with self.project_fs.open(data_path, 'w') as data_file:
+        with self.project_fs.open(data_path, 'wb') as data_file:
             data_file.write(data)
 
-    def remove_data_file(self, project_name, file_name):
+    def remove_data_file(self, project_name: str, file_name: str):
         data_path = f'{project_name}/data/{file_name}'
         if not self.project_fs.exists(data_path):
             raise ResourceNotFound(f"Data file '{file_name}' not found in project '{project_name}'.")
 
         self.project_fs.remove(data_path)
 
-    def list_data_files(self, project_name):
+    def list_data_files(self, project_name: str) -> List[str]:
         data_dir = f'{project_name}/data'
         if not self.project_fs.exists(data_dir):
             raise ResourceNotFound(f"No data directory found for project '{project_name}'.")
         return self.project_fs.listdir(data_dir)
 
-    def add_spec_lib(self, project_name, file_name, data):
+    def add_spec_lib(self, project_name: str, file_name: str, data: bytes):
         spec_lib_path = f'{project_name}/spec_lib/{file_name}'
         if not self.project_fs.exists(f'{project_name}/spec_lib'):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'spec_lib' directory.")
 
-        with self.project_fs.open(spec_lib_path, 'w') as spec_lib_file:
+        with self.project_fs.open(spec_lib_path, 'wb') as spec_lib_file:
             spec_lib_file.write(data)
 
-    def remove_spec_lib(self, project_name, file_name):
+    def remove_spec_lib(self, project_name: str, file_name: str):
         spec_lib_path = f'{project_name}/spec_lib/{file_name}'
         if not self.project_fs.exists(spec_lib_path):
             raise ResourceNotFound(f"Spectral library file '{file_name}' not found in project '{project_name}'.")
 
         self.project_fs.remove(spec_lib_path)
 
-    def list_spec_lib_files(self, project_name):
+    def list_spec_lib_files(self, project_name: str) -> List[str]:
         spec_lib_dir = f'{project_name}/spec_lib'
         if not self.project_fs.exists(spec_lib_dir):
             raise ResourceNotFound(f"No spectral library directory found for project '{project_name}'.")
         return self.project_fs.listdir(spec_lib_dir)
 
-    def add_search(self, project_name, search_name, data):
+    def add_search(self, project_name: str, search_name: str, data: Dict[str, Any]):
         project_dir = f'{project_name}'
         search_dir = f'{project_name}/search/{search_name}'
 
@@ -142,6 +149,8 @@ class RemoteProjectFileSystem:
         spec_lib_files = self.project_fs.listdir(spec_lib_directory)
         for spec_lib_file in spec_lib_files:
             command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib_file}"
+
+        project_path = self.project_fs.getsyspath() # in search/searchname
 
         command += " --verbose " + str(data['log_level'])
         command += " --out " + data['projects_path'] + "/" + search_dir
@@ -243,7 +252,7 @@ cd $SLURM_SUBMIT_DIR
         with self.project_fs.open(script_path, 'w') as search_command_file:
             search_command_file.write(script_replaced)
 
-    def run_search(self, project_name, search_name):
+    def run_search(self, project_name: str, search_name: str):
         ssh = create_scp_client(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'])
 
         script_path = f"{self._home_path}/projects/{project_name}/search/{search_name}/search_command.sh"
@@ -253,7 +262,7 @@ cd $SLURM_SUBMIT_DIR
         st.write(stderr.read().decode())
         ssh.close()
 
-    def remove_search(self, project_name, search_name):
+    def remove_search(self, project_name: str, search_name: str):
         project_dir = f'{project_name}'
         search_dir = f'{project_name}/search/{search_name}'
 
@@ -268,13 +277,17 @@ cd $SLURM_SUBMIT_DIR
         # Remove the search directory and its contents
         self.project_fs.removetree(search_dir)
 
-    def list_searches(self, project_name):
+    def list_searches(self, project_name: str) -> List[str]:
         search_dir = join(project_name, 'search')
         if not self.project_fs.exists(search_dir):
             raise ResourceNotFound(f"No search directory found for project '{project_name}'.")
         return self.project_fs.listdir(search_dir)
 
+
 if __name__ == "__main__":
+    """
+    Testing only, will be not run with streamlit. must run this file directly to run this code.
+    """
     # Connect to FTP server
     password = input("Enter password: ")
 

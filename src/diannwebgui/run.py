@@ -2,21 +2,21 @@ import subprocess
 import os
 import signal
 import sys
+import argparse
 
 
 def main():
+
     # Resolve the path to home.py
-    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "app.py"))
+    script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "gui.py"))
+    run_script = ["streamlit", "run", script_path] 
 
     # Run the Streamlit app with specified arguments
-    process = subprocess.Popen(
-        ["streamlit", "run", script_path],
-    )
+    process = subprocess.Popen(run_script)
 
     def signal_handler(sig, frame):
         print('Terminating Streamlit process...')
         process.terminate()
-        #process.wait(timeout=2)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)

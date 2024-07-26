@@ -18,8 +18,8 @@ def create_scp_client(server_ip, username, password):
 
 class RemoteProjectFileSystem:
     def __init__(self, host, user, passwd, protocol='ftp'):
-        self._user = user
         home_path = f'/gpfs/home/{user}'  # Adjust as necessary
+        self._home_path = home_path
         if protocol == 'ftp':
             self.fs = FTPFS(host, user, passwd)
         elif protocol == 'sftp':
@@ -32,9 +32,6 @@ class RemoteProjectFileSystem:
             home_fs.makedir('projects')
 
         self.project_fs = home_fs.opendir('projects')
-
-    def get_user(self):
-        return self._user
 
     def get_data_file_contents(self, project_name, file_name):
         file_path = f'{project_name}/data/{file_name}'
@@ -139,12 +136,12 @@ class RemoteProjectFileSystem:
         data_directory = f'{project_name}/data'
         data_files = self.project_fs.listdir(data_directory)
         for data_file in data_files:
-            command += f" --f {data['projects_path']}/{data_directory}/{data_file}"
+            command += f" --f {self._home_path}/projects/{data_directory}/{data_file}"
 
         spec_lib_directory = f'{project_name}/spec_lib'
         spec_lib_files = self.project_fs.listdir(spec_lib_directory)
         for spec_lib_file in spec_lib_files:
-            command += f" --lib {data['projects_path']}/{spec_lib_directory}/{spec_lib_file}"
+            command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib_file}"
 
         command += " --verbose " + str(data['log_level'])
         command += " --out " + data['projects_path'] + "/" + search_dir
@@ -249,10 +246,8 @@ cd $SLURM_SUBMIT_DIR
     def run_search(self, project_name, search_name):
         ssh = create_scp_client(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'])
 
-        home_fs = OSFS('~/')
-        projects_path = home_fs.getsyspath('projects')
+        script_path = f"{self._home_path}/projects/{project_name}/search/{search_name}/search_command.sh"
 
-        script_path = f"{projects_path}/{project_name}/search/{search_name}/search_command.sh"
         ssh.exec_command(f"chmod +x {script_path}")
         stdin, stdout, stderr = ssh.exec_command(f"sbatch {script_path}")
         st.write(stderr.read().decode())

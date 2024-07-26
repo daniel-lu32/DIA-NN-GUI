@@ -262,7 +262,6 @@ def search_add_dialogue():
 
     search_parameters = {}
 
-    search_parameters['projects_path'] = f"/gpfs/home/{fs.get_user()}/projects"
     search_parameters['precursor_fdr'] = st.number_input("Precursor FDR (%):", min_value=0.01, max_value=100.0, value=1.0)
     search_parameters['log_level'] = st.number_input("Log Level (%):", min_value=0, max_value=5, value=1)
     search_parameters['quantities_matrices'] = st.checkbox("Quantities Matrices", value=True)

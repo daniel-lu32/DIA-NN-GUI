@@ -117,7 +117,7 @@ class RemoteProjectFileSystem:
             raise ResourceNotFound(f"No spectral library directory found for project '{project_name}'.")
         return self.project_fs.listdir(spec_lib_dir)
 
-    def add_search(self, project_name: str, search_name: str, data: Dict[str, Any]):
+    def add_search(self, project_name: str, search_name: str, data: Dict[str, Any], selected_data_files, selected_spec_lib):
         project_dir = f'{project_name}'
         search_dir = f'{project_name}/search/{search_name}'
 
@@ -132,25 +132,19 @@ class RemoteProjectFileSystem:
         # Create the search directory
         self.project_fs.makedir(search_dir, recreate=True)
 
-        # Save data to the new folder as config.json
-        # config_path = f'{search_dir}/config.json'
-        # with self.project_fs.open(config_path, 'w') as config_file:
-        #     json.dump(data, config_file)
-
         # TODO: add command additions from the "Precursor Ion Generation" section of DIA-NN
         command = ""
 
         data_directory = f'{project_name}/data'
-        data_files = self.project_fs.listdir(data_directory)
+        data_files = selected_data_files
         for data_file in data_files:
             command += f" --f {self._home_path}/projects/{data_directory}/{data_file}"
 
         spec_lib_directory = f'{project_name}/spec_lib'
-        spec_lib_files = self.project_fs.listdir(spec_lib_directory)
-        for spec_lib_file in spec_lib_files:
-            command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib_file}"
+        spec_lib = selected_spec_lib
+        command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib}"
 
-        project_path = self.project_fs.getsyspath() # in search/searchname
+        # project_path = self.project_fs.getsyspath() # in search/searchname
 
         command += " --verbose " + str(data['log_level'])
         command += f" --out {self._home_path}/projects/{search_dir}"
@@ -229,10 +223,6 @@ class RemoteProjectFileSystem:
 
         if not (data['additional_options'] == ""):
             command += " " + data['additional_options']
-
-        command_path = f'{search_dir}/command.json'
-        with self.project_fs.open(command_path, 'w') as command_file:
-            json.dump(command, command_file)
 
         script = f"""#!/bin/sh
 #SBATCH --nodes=1

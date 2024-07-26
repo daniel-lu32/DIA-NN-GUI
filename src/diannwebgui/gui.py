@@ -14,7 +14,7 @@ if 'file_data' not in st.session_state:
 
 st.title("DIA-NN GUI")
 
-file_system = 'ftp'
+file_system = 'sftp'
 if st.session_state.username == 'debug':
     file_system = 'osf'
     
@@ -60,7 +60,7 @@ with t1:
 
 @st.experimental_dialog("Add Data Files")
 def data_add_dialogue(project: str):
-    data_files = st.file_uploader(label="Upload Data Files", type=[".dia", ".tar", ".zip", ".raw"], accept_multiple_files=True)
+    data_files = st.file_uploader(label="Upload Data Files", accept_multiple_files=True)#type=[".dia", ".tar", ".zip", ".raw"],
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="primary", key="data_add_dialogue_confirm"):
         for file in data_files:
@@ -179,18 +179,16 @@ with t3:
 @st.experimental_dialog("Add Search", width='large')
 def search_add_dialogue(project: str):
 
-    data_files = fs.list_data_files(project)
-    data_df = pd.DataFrame({'Name': data_files})
-
-    spec_lib_files = fs.list_spec_lib_files(project)
-    spec_lib_df = pd.DataFrame({'Name': spec_lib_files})
+    data_df = pd.DataFrame(fs.list_data_files(selected_project), columns=['Name'])
+    spec_lib_df = pd.DataFrame(fs.list_spec_lib_files(selected_project), columns=['Name'])
 
     search_name = st.text_input("Search Name:")
 
-    t1, t2, t3 = st.tabs(['Search Params', 'Data', 'SpecLib'])
+    t1, t2, t3 = st.tabs(['Search Parameters', 'Data Files', 'Spectral Libraries'])
 
     selected_data_files = []
     selected_spec_lib = None
+
     with t1:
         search_parameters = {}
 
@@ -226,17 +224,14 @@ def search_add_dialogue(project: str):
     with t2:
         selection = st.dataframe(data_df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key='search_datafiles_df')
         selected_indices = [row for row in selection['selection']['rows']]
-        selected_data_files = [df.iloc[i].Name for i in selected_indices]
+        selected_data_files = [data_df.iloc[i].Name for i in selected_indices]
 
     with t3:
         selection = st.dataframe(spec_lib_df, use_container_width=True, hide_index=True, selection_mode="single-row", on_select="rerun", key='search_speclib_df')
         selected_indices = [row for row in selection['selection']['rows']]
-        selected_spec_libs = [df.iloc[i].Name for i in selected_indices]
-
-        if len(selected_spec_libs) == 1:
-            selected_spec_lib = selected_spec_libs[0]
-
-
+        selected_spec_lib = [spec_lib_df.iloc[i].Name for i in selected_indices]
+        if len(selected_spec_lib) == 1:
+             selected_spec_lib= selected_spec_lib[0]
 
     # TODO: add options from the "Precursor Ion Generation" section of DIA-NN
     # checkbox1 = st.checkbox("FASTA digest for library-free search / library generation", value=False)
@@ -263,10 +258,9 @@ def search_add_dialogue(project: str):
     if not selected_spec_lib:
         st.warning('No spec lib selected')
 
-
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="primary", key="search_add_dialogue_confirm", disabled= not selected_data_files or not search_name or not selected_spec_lib):
-        fs.add_search(selected_project, search_name, search_parameters)
+        fs.add_search(selected_project, search_name, search_parameters, selected_data_files, selected_spec_lib)
         # fs.run_search(selected_project, search_name)
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="secondary", key="search_add_dialogue_cancel"):
@@ -285,10 +279,18 @@ def search_delete_dialogue(project: str, selected_searches: List[str]):
 
 @st.experimental_dialog("Download Search")
 def search_download_dialogue(project: str, search: str):
-    new_file_name = st.text_input("Rename File (.json):", search)
+    new_file_name = st.text_input("Rename File (.sh):", value=f"{search}_search_command.sh")
     c1, c2 = st.columns(2)
-    if c1.button("Download", use_container_width=True, type="secondary", key="search_download_dialogue_cancel", disabled=True):
-        pass
+    file_data = fs.get_search_contents(project, search, "search_command.sh")
+    c1.download_button(label=f"Download",
+                       data=file_data,
+                       file_name=new_file_name,
+                       mime="application/octet-stream",
+                       key=f"search_{new_file_name}",
+                       use_container_width=True,
+                       type="primary"
+                       )
+
     if c2.button("Cancel", use_container_width=True, type="secondary", key="search_download_dialogue_cancel"):
         st.rerun()
 

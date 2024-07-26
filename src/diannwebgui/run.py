@@ -9,7 +9,7 @@ def main():
 
     # Resolve the path to home.py
     script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "gui.py"))
-    run_script = ["streamlit", "run", script_path] 
+    run_script = ["streamlit", "run", script_path, "--server.maxUploadSize=8000"]
 
     # Run the Streamlit app with specified arguments
     process = subprocess.Popen(run_script)

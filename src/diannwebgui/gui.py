@@ -60,7 +60,7 @@ with t1:
 
 @st.experimental_dialog("Add Data Files")
 def data_add_dialogue(project: str):
-    data_files = st.file_uploader(label="Upload Data Files", accept_multiple_files=True)#type=[".dia", ".tar", ".zip", ".raw"],
+    data_files = st.file_uploader(label="Upload Data Files", type=[".dia", ".tar", ".zip", ".raw"], accept_multiple_files=True)
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="primary", key="data_add_dialogue_confirm"):
         for file in data_files:

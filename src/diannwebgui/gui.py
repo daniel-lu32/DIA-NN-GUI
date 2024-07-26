@@ -4,7 +4,6 @@ import pandas as pd
 from utils import get_fs
 from login import login
 
-
 login()
 
 if 'selected_files' not in st.session_state:
@@ -261,7 +260,7 @@ def search_add_dialogue(project: str):
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="primary", key="search_add_dialogue_confirm", disabled= not selected_data_files or not search_name or not selected_spec_lib):
         fs.add_search(selected_project, search_name, search_parameters, selected_data_files, selected_spec_lib)
-        # fs.run_search(selected_project, search_name)
+        fs.run_search(selected_project, search_name)
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="secondary", key="search_add_dialogue_cancel"):
         st.rerun()

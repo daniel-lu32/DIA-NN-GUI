@@ -1,8 +1,6 @@
 from fs.sshfs import SSHFS
 from fs.ftpfs import FTPFS
-from fs.osfs import OSFS
 from fs.errors import ResourceNotFound, DirectoryExists
-import json
 from fs.path import join
 from fs.osfs import OSFS
 from typing import Any, Dict, List, Literal
@@ -144,10 +142,8 @@ class RemoteProjectFileSystem:
         spec_lib = selected_spec_lib
         command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib}"
 
-        # project_path = self.project_fs.getsyspath() # in search/searchname
-
         command += " --verbose " + str(data['log_level'])
-        command += f" --out {self._home_path}/projects/{search_dir}"
+        command += f" --out {self._home_path}/projects/{search_dir}/results/report.tsv"
         command += " --qvalue " + str(data['precursor_fdr']/100)
 
         if data['quantities_matrices']:
@@ -243,7 +239,7 @@ cd $SLURM_SUBMIT_DIR
             search_command_file.write(script_replaced)
 
     def run_search(self, project_name: str, search_name: str):
-        ssh = create_scp_client(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'])
+        scp, ssh = create_scp_client(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'])
 
         script_path = f"{self._home_path}/projects/{project_name}/search/{search_name}/search_command.sh"
 
@@ -272,7 +268,6 @@ cd $SLURM_SUBMIT_DIR
         if not self.project_fs.exists(search_dir):
             raise ResourceNotFound(f"No search directory found for project '{project_name}'.")
         return self.project_fs.listdir(search_dir)
-
 
 if __name__ == "__main__":
     """

@@ -153,7 +153,7 @@ class RemoteProjectFileSystem:
         project_path = self.project_fs.getsyspath() # in search/searchname
 
         command += " --verbose " + str(data['log_level'])
-        command += " --out " + data['projects_path'] + "/" + search_dir
+        command += f" --out {self._home_path}/projects/{search_dir}"
         command += " --qvalue " + str(data['precursor_fdr']/100)
 
         if data['quantities_matrices']:

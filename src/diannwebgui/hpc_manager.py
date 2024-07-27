@@ -10,6 +10,9 @@ import streamlit as st
 import paramiko
 from scp import SCPClient
 
+from fs.zipfs import ZipFS
+from io import BytesIO
+
 def create_scp_client(server_ip, username, password):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -48,10 +51,20 @@ class RemoteProjectFileSystem:
         with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
 
-    def get_search_contents(self, project_name: str, search_name: str, file_name: str) -> bytes:
-        file_path = f'{project_name}/search/{search_name}/{file_name}'
+    def get_search_contents(self, project_name: str, search_name: str) -> bytes:
+        file_path = f'{project_name}/search/{search_name}/search_command.sh'
         with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
+
+    def get_results_contents(self, project_name: str, search_name: str) -> bytes:
+        directory_path = f'{project_name}/search/{search_name}'
+        buffer = BytesIO()
+
+        with self.project_fs.opendir(directory_path) as source_fs:
+            with ZipFS(buffer, write=True) as zip_fs:
+                source_fs.copydir("/", zip_fs, "/")
+        buffer.seek(0)
+        return buffer
 
     def create_project(self, project_name: str):
         project_path = f'{project_name}'
@@ -143,7 +156,7 @@ class RemoteProjectFileSystem:
         command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib}"
 
         command += " --verbose " + str(data['log_level'])
-        command += f" --out {self._home_path}/projects/{search_dir}/results/report.tsv"
+        command += f" --out {self._home_path}/projects/{search_dir}/report.tsv"
         command += " --qvalue " + str(data['precursor_fdr']/100)
 
         if data['quantities_matrices']:

@@ -12,7 +12,6 @@ from scp import SCPClient
 
 from fs.zipfs import ZipFS
 import io
-import fs
 
 def create_scp_client(server_ip, username, password):
     ssh = paramiko.SSHClient()

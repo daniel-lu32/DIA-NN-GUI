@@ -81,7 +81,7 @@ def data_delete_dialogue(project: str, selected_file: str):
 
 @st.experimental_dialog("Download Data File")
 def data_download_dialogue(project: str, selected_file: str):
-    new_file_name = st.text_input("Rename File (Include File Extension):", value=selected_file)
+    new_file_name = st.text_input("Rename File and Press Enter (Include File Extension):", value=selected_file)
     c1, c2 = st.columns(2)
     file_data = fs.get_data_file_contents(project, selected_file)
 
@@ -141,7 +141,7 @@ def spec_lib_delete_dialogue(project: str, selected_file: List[str]):
 
 @st.experimental_dialog("Download Spectral Library")
 def spec_lib_download_dialogue(project: str, selected_file: str):
-    new_file_name = st.text_input("Rename File (Include File Extension):", value=selected_file)
+    new_file_name = st.text_input("Rename File and Press Enter (Include File Extension):", value=selected_file)
     c1, c2 = st.columns(2)
     file_data = fs.get_spec_lib_contents(project, selected_file)
     c1.download_button(label=f"Download",
@@ -276,29 +276,12 @@ def search_delete_dialogue(project: str, selected_searches: List[str]):
     if c2.button("Cancel", use_container_width=True, type="primary", key="search_delete_dialogue_cancel"):
         st.rerun()
 
-@st.experimental_dialog("Download Search")
-def search_download_dialogue(project: str, search: str):
-    new_file_name = st.text_input("Rename File (.sh):", value=f"{search}_search_command.sh")
-    c1, c2 = st.columns(2)
-    file_data = fs.get_search_contents(project, search)
-    c1.download_button(label=f"Download",
-                       data=file_data,
-                       file_name=new_file_name,
-                       mime="application/octet-stream",
-                       key=f"search_{new_file_name}",
-                       use_container_width=True,
-                       type="primary"
-                       )
-
-    if c2.button("Cancel", use_container_width=True, type="secondary", key="search_download_dialogue_cancel"):
-        st.rerun()
-
 @st.experimental_dialog("Download Search Results")
-def search_download_dialogue_alternative(project: str, search: str):
-    zip_name = st.text_input("Rename File :", value=f"{search}_results.zip")
+def search_download_dialogue(project: str, search: str):
+    zip_name = st.text_input("Rename File and Press Enter (.zip):", value=f"{search}_results.zip")
     c1, c2 = st.columns(2)
     zip_buffer = fs.get_results_contents(project, search)
-    st.download_button(
+    c1.download_button(
         label="Download Zip",
         data=zip_buffer,
         file_name=zip_name,

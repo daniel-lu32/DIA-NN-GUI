@@ -11,7 +11,8 @@ import paramiko
 from scp import SCPClient
 
 from fs.zipfs import ZipFS
-from io import BytesIO
+import io
+import fs
 
 def create_scp_client(server_ip, username, password):
     ssh = paramiko.SSHClient()
@@ -51,20 +52,19 @@ class RemoteProjectFileSystem:
         with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
 
-    def get_search_contents(self, project_name: str, search_name: str) -> bytes:
-        file_path = f'{project_name}/search/{search_name}/search_command.sh'
-        with self.project_fs.open(file_path, 'rb') as file:
-            return file.read()
-
     def get_results_contents(self, project_name: str, search_name: str) -> bytes:
-        directory_path = f'{project_name}/search/{search_name}'
-        buffer = BytesIO()
 
-        with self.project_fs.opendir(directory_path) as source_fs:
-            with ZipFS(buffer, write=True) as zip_fs:
-                source_fs.copydir("/", zip_fs, "/")
-        buffer.seek(0)
-        return buffer
+        directory_path = f'{project_name}/search/{search_name}'
+
+        zip_buffer = io.BytesIO()
+        with ZipFS(zip_buffer, write=True) as zip_fs:
+            for file_name in self.project_fs.listdir(directory_path):
+                file_path = f'{directory_path}/{file_name}'
+                with self.project_fs.open(file_path, 'rb') as file:
+                    file_contents = file.read()
+                    zip_fs.writebytes(file_name, file_contents)
+
+        return zip_buffer.getvalue()
 
     def create_project(self, project_name: str):
         project_path = f'{project_name}'

@@ -278,7 +278,7 @@ def search_delete_dialogue(project: str, selected_searches: List[str]):
 
 @st.experimental_dialog("Download Search Results")
 def search_download_dialogue(project: str, search: str):
-    zip_name = st.text_input("Rename File and Press Enter (.zip):", value=f"{search}_results.zip")
+    zip_name = st.text_input("Rename Zip and Press Enter (.zip):", value=f"{search}_results.zip")
     c1, c2 = st.columns(2)
     zip_buffer = fs.get_results_contents(project, search)
     c1.download_button(

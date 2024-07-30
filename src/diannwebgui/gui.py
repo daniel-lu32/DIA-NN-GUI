@@ -315,7 +315,7 @@ with t4:
 with t5:
     if fs.list_projects():
         st.subheader("View Results")
-        st.markdown("hi")
+        st.markdown("To view search results, select the files you would like to view and click \"View.\"")
         selected_search = st.selectbox("Select Search:", options=fs.list_searches(selected_project))
         if fs.list_searches(selected_project):
             df = pd.DataFrame(fs.list_results(selected_project, selected_search), columns=['Name'])
@@ -323,5 +323,7 @@ with t5:
             selected_indices = [row for row in selection['selection']['rows']]
             selected_files = [df.iloc[i].Name for i in selected_indices]
 
-            if st.button("View", use_container_width=True, type="primary", key="results_view", disabled=len(selected_files) != 1):
-                st.dataframe(data=fs.get_results_file_contents(selected_project, selected_search, selected_files[0]), use_container_width=True, hide_index=True, key='results_view_df')
+            if st.button("View", use_container_width=True, type="primary", key="results_view"):
+                for file in selected_files:
+                    st.caption(file)
+                    st.dataframe(data=fs.get_results_file_contents(selected_project, selected_search, file), use_container_width=True, hide_index=True, key='results_view_df')

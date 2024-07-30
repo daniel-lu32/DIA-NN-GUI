@@ -1,7 +1,6 @@
 from fs.sshfs import SSHFS
 from fs.ftpfs import FTPFS
 from fs.errors import ResourceNotFound, DirectoryExists
-from fs.path import join
 from fs.osfs import OSFS
 from typing import Any, Dict, List, Literal
 
@@ -12,6 +11,7 @@ from scp import SCPClient
 
 from fs.zipfs import ZipFS
 import io
+import pandas as pd
 
 def create_scp_client(server_ip, username, password):
     ssh = paramiko.SSHClient()
@@ -276,10 +276,22 @@ cd $SLURM_SUBMIT_DIR
         self.project_fs.removetree(search_dir)
 
     def list_searches(self, project_name: str) -> List[str]:
-        search_dir = join(project_name, 'search')
+        search_dir = f"{project_name}/search"
         if not self.project_fs.exists(search_dir):
             raise ResourceNotFound(f"No search directory found for project '{project_name}'.")
         return self.project_fs.listdir(search_dir)
+
+    def list_results(self, project_name: str, search_name: str) -> List[str]:
+        results_dir = f"{project_name}/search/{search_name}"
+        if not self.project_fs.exists(results_dir):
+            raise ResourceNotFound(f"No results directory found for project '{project_name}'.")
+        return self.project_fs.listdir(results_dir)
+
+    def get_results_file_contents(self, project_name: str, search_name: str, file_name: str) -> pd.DataFrame:
+        file_path = f"{project_name}/search/{search_name}/{file_name}"
+
+        with self.project_fs.open(file_path, 'rb') as file:
+            return pd.read_csv(io.BytesIO(file.read()), sep='\t')
 
 if __name__ == "__main__":
     """

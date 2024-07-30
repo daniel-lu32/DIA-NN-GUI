@@ -20,7 +20,7 @@ if st.session_state.username == 'debug':
 fs = get_fs(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'], file_system)
 selected_project = st.selectbox("Select Project:", options=fs.list_projects())
 
-t1, t2, t3, t4 = st.tabs(["Projects", "Data Files", "Spectral Libraries", "Searches"])
+t1, t2, t3, t4, t5 = st.tabs(["Projects", "Data Files", "Spectral Libraries", "Searches", "View Results"])
 
 @st.experimental_dialog("Add Project")
 def projects_add_dialogue():
@@ -311,3 +311,17 @@ with t4:
             search_delete_dialogue(selected_project, selected_files)
         if c2.button("Download", use_container_width=True, type="secondary", key="search_download", disabled=len(selected_files)!=1):
             search_download_dialogue(selected_project, selected_files[0])
+
+with t5:
+    if fs.list_projects():
+        st.subheader("View Results")
+        st.markdown("hi")
+        selected_search = st.selectbox("Select Search:", options=fs.list_searches(selected_project))
+        if fs.list_searches(selected_project):
+            df = pd.DataFrame(fs.list_results(selected_project, selected_search), columns=['Name'])
+            selection = st.dataframe(df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key='results_df')
+            selected_indices = [row for row in selection['selection']['rows']]
+            selected_files = [df.iloc[i].Name for i in selected_indices]
+
+            if st.button("View", use_container_width=True, type="primary", key="results_view", disabled=len(selected_files) != 1):
+                st.dataframe(data=fs.get_results_file_contents(selected_project, selected_search, selected_files[0]), use_container_width=True, hide_index=True, key='results_view_df')

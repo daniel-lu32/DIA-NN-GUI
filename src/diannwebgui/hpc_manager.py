@@ -23,10 +23,10 @@ class RemoteProjectFileSystem:
     def __init__(self, host: str, user: str, passwd: str, protocol: Literal['ftp', 'sftp', 'osf']='ftp'):
         if protocol == 'ftp':
             self.fs = FTPFS(host, user, passwd)
-            home_path = f'/gpfs/home/{user}'  # Adjust as necessary
+            home_path = f'/gpfs/group/yates'  # Adjust as necessary
         elif protocol == 'sftp':
             self.fs = SSHFS(host, user=user, passwd=passwd)
-            home_path = f'/gpfs/home/{user}'  # Adjust as necessary
+            home_path = f'/gpfs/group/yates'  # Adjust as necessary
         elif protocol == 'osf':
             self.fs = OSFS('.')
             home_path = '.'

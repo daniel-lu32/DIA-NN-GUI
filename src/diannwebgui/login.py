@@ -18,7 +18,7 @@ def login_dialog():
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    if username == 'debug':
+    if username == "debug":
         st.session_state['authenticated'] = True
         st.session_state['server_ip'] = server_ip
         st.session_state['username'] = username
@@ -39,12 +39,10 @@ def login_dialog():
         except Exception as e:
             st.error(f"Login failed: {str(e)}")
 
-
 def login():
     """
     Will stop streamlit execution if use is not logged in
     """
-
     if 'authenticated' not in st.session_state:
         st.session_state['authenticated'] = False
 

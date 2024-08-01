@@ -2,16 +2,13 @@ from fs.sshfs import SSHFS
 from fs.ftpfs import FTPFS
 from fs.errors import ResourceNotFound, DirectoryExists
 from fs.osfs import OSFS
+from fs.zipfs import ZipFS
 from typing import Any, Dict, List, Literal
-
-import streamlit as st
-
 import paramiko
 from scp import SCPClient
-
-from fs.zipfs import ZipFS
 import io
 import pandas as pd
+import streamlit as st
 
 def create_scp_client(server_ip, username, password):
     ssh = paramiko.SSHClient()
@@ -20,45 +17,45 @@ def create_scp_client(server_ip, username, password):
     return SCPClient(ssh.get_transport()), ssh
 
 class RemoteProjectFileSystem:
-    def __init__(self, host: str, user: str, passwd: str, protocol: Literal['ftp', 'sftp', 'osf']='ftp'):
-        if protocol == 'ftp':
+    def __init__(self, host: str, user: str, passwd: str, protocol: Literal["ftp", "sftp", "osf"]="sftp"):
+        if protocol == "ftp":
             self.fs = FTPFS(host, user, passwd)
-            home_path = f'/gpfs/group/yates'  # Adjust as necessary
-        elif protocol == 'sftp':
+            home_path = f"/gpfs/group/yates"  # Adjust as necessary
+        elif protocol == "sftp":
             self.fs = SSHFS(host, user=user, passwd=passwd)
-            home_path = f'/gpfs/group/yates'  # Adjust as necessary
-        elif protocol == 'osf':
-            self.fs = OSFS('.')
-            home_path = '.'
+            home_path = f"/gpfs/group/yates"  # Adjust as necessary
+        elif protocol == "osf":
+            self.fs = OSFS(".")
+            home_path = "."
         else:
             raise ValueError("Unsupported protocol. Use 'ftp' or 'sftp' or 'osf'")
         
         self._home_path = home_path
 
         home_fs = self.fs.opendir(home_path)
-        if not home_fs.exists('projects'):
-            home_fs.makedir('projects')
+        if not home_fs.exists("projects"):
+            home_fs.makedir("projects")
 
-        self.project_fs = home_fs.opendir('projects')
+        self.project_fs = home_fs.opendir("projects")
 
     def get_data_file_contents(self, project_name: str, file_name: str) -> bytes:
-        file_path = f'{project_name}/data/{file_name}'
+        file_path = f"{project_name}/data/{file_name}"
         with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
 
     def get_spec_lib_contents(self, project_name: str, file_name: str) -> bytes:
-        file_path = f'{project_name}/spec_lib/{file_name}'
+        file_path = f"{project_name}/spec_lib/{file_name}"
         with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
 
     def get_results_contents(self, project_name: str, search_name: str) -> bytes:
 
-        directory_path = f'{project_name}/search/{search_name}'
+        directory_path = f"{project_name}/search/{search_name}"
 
         zip_buffer = io.BytesIO()
         with ZipFS(zip_buffer, write=True) as zip_fs:
             for file_name in self.project_fs.listdir(directory_path):
-                file_path = f'{directory_path}/{file_name}'
+                file_path = f"{directory_path}/{file_name}"
                 with self.project_fs.open(file_path, 'rb') as file:
                     file_contents = file.read()
                     zip_fs.writebytes(file_name, file_contents)
@@ -66,70 +63,70 @@ class RemoteProjectFileSystem:
         return zip_buffer.getvalue()
 
     def create_project(self, project_name: str):
-        project_path = f'{project_name}'
+        project_path = f"{project_name}"
         if self.project_fs.exists(project_path):
             raise FileExistsError(f"Project '{project_name}' already exists.")
 
         project_fs = self.project_fs.makedir(project_path)
-        project_fs.makedir('data')
-        project_fs.makedir('search')
-        project_fs.makedir('spec_lib')
+        project_fs.makedir("data")
+        project_fs.makedir("search")
+        project_fs.makedir("spec_lib")
 
     def remove_project(self, project_name: str):
-        project_path = f'{project_name}'
+        project_path = f"{project_name}"
         if self.project_fs.exists(project_path):
             self.project_fs.removetree(project_path)
         else:
             raise ResourceNotFound(f"Project '{project_name}' does not exist.")
 
     def list_projects(self) -> List[str]:
-        return self.project_fs.listdir('.')
+        return self.project_fs.listdir(".")
 
     def add_data_file(self, project_name: str, file_name: str, data: bytes):
-        data_path = f'{project_name}/data/{file_name}'
-        if not self.project_fs.exists(f'{project_name}/data'):
+        data_path = f"{project_name}/data/{file_name}"
+        if not self.project_fs.exists(f"{project_name}/data"):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'data' directory.")
 
         with self.project_fs.open(data_path, 'wb') as data_file:
             data_file.write(data)
 
     def remove_data_file(self, project_name: str, file_name: str):
-        data_path = f'{project_name}/data/{file_name}'
+        data_path = f"{project_name}/data/{file_name}"
         if not self.project_fs.exists(data_path):
             raise ResourceNotFound(f"Data file '{file_name}' not found in project '{project_name}'.")
 
         self.project_fs.remove(data_path)
 
     def list_data_files(self, project_name: str) -> List[str]:
-        data_dir = f'{project_name}/data'
+        data_dir = f"{project_name}/data"
         if not self.project_fs.exists(data_dir):
             raise ResourceNotFound(f"No data directory found for project '{project_name}'.")
         return self.project_fs.listdir(data_dir)
 
     def add_spec_lib(self, project_name: str, file_name: str, data: bytes):
-        spec_lib_path = f'{project_name}/spec_lib/{file_name}'
-        if not self.project_fs.exists(f'{project_name}/spec_lib'):
+        spec_lib_path = f"{project_name}/spec_lib/{file_name}"
+        if not self.project_fs.exists(f"{project_name}/spec_lib"):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'spec_lib' directory.")
 
         with self.project_fs.open(spec_lib_path, 'wb') as spec_lib_file:
             spec_lib_file.write(data)
 
     def remove_spec_lib(self, project_name: str, file_name: str):
-        spec_lib_path = f'{project_name}/spec_lib/{file_name}'
+        spec_lib_path = f"{project_name}/spec_lib/{file_name}"
         if not self.project_fs.exists(spec_lib_path):
             raise ResourceNotFound(f"Spectral library file '{file_name}' not found in project '{project_name}'.")
 
         self.project_fs.remove(spec_lib_path)
 
     def list_spec_lib_files(self, project_name: str) -> List[str]:
-        spec_lib_dir = f'{project_name}/spec_lib'
+        spec_lib_dir = f"{project_name}/spec_lib"
         if not self.project_fs.exists(spec_lib_dir):
             raise ResourceNotFound(f"No spectral library directory found for project '{project_name}'.")
         return self.project_fs.listdir(spec_lib_dir)
 
     def add_search(self, project_name: str, search_name: str, data: Dict[str, Any], selected_data_files, selected_spec_lib):
-        project_dir = f'{project_name}'
-        search_dir = f'{project_name}/search/{search_name}'
+        project_dir = f"{project_name}"
+        search_dir = f"{project_name}/search/{search_name}"
 
         # Check if the project exists
         if not self.project_fs.exists(project_dir):
@@ -145,12 +142,12 @@ class RemoteProjectFileSystem:
         # TODO: add command additions from the "Precursor Ion Generation" section of DIA-NN
         command = ""
 
-        data_directory = f'{project_name}/data'
+        data_directory = f"{project_name}/data"
         data_files = selected_data_files
         for data_file in data_files:
             command += f" --f {self._home_path}/projects/{data_directory}/{data_file}"
 
-        spec_lib_directory = f'{project_name}/spec_lib'
+        spec_lib_directory = f"{project_name}/spec_lib"
         spec_lib = selected_spec_lib
         command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib}"
 
@@ -261,8 +258,8 @@ cd {self._home_path}/projects/{project_name}
         ssh.close()
 
     def remove_search(self, project_name: str, search_name: str):
-        project_dir = f'{project_name}'
-        search_dir = f'{project_name}/search/{search_name}'
+        project_dir = f"{project_name}"
+        search_dir = f"{project_name}/search/{search_name}"
 
         # Check if the project exists
         if not self.project_fs.exists(project_dir):
@@ -291,11 +288,11 @@ cd {self._home_path}/projects/{project_name}
         file_path = f"{project_name}/search/{search_name}/{file_name}"
 
         with self.project_fs.open(file_path, 'rb') as file:
-            return pd.read_csv(io.BytesIO(file.read()), sep='\t')
+            return pd.read_csv(io.BytesIO(file.read()), sep="\t")
 
 if __name__ == "__main__":
     """
-    Testing only, will be not run with streamlit. must run this file directly to run this code.
+    Testing only, will be not run with streamlit. Must run this file directly to run this code.
     """
     # Connect to FTP server
     password = input("Enter password: ")

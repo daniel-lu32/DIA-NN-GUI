@@ -240,7 +240,7 @@ class RemoteProjectFileSystem:
 #SBATCH --partition=highmem
 #SBATCH --time=240:00:00
 
-cd $SLURM_SUBMIT_DIR
+cd {self._home_path}/projects/{project_name}
 
 /gpfs/home/rpark/cluster/DiaNN.sif --threads 20 {command}
 """

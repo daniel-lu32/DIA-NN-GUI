@@ -232,22 +232,6 @@ def search_add_dialog(project: str):
         if len(selected_spec_lib) == 1:
              selected_spec_lib= selected_spec_lib[0]
 
-    # TODO: add options from the "Precursor Ion Generation" section of DIA-NN
-    # checkbox1 = st.checkbox("FASTA digest for library-free search / library generation", value=False)
-    # checkbox2 = st.checkbox("Deep learning-based spectra, RTs, and IMs prediction", value=False)
-    #
-    # dropdown1 = st.selectbox("Protease:", options=["Trypsin/P", "Trypsin", "Lys-C", "Chymotrypsin", "AspN", "GluC"])
-    #
-    # number1 = st.number_input("Missed cleavages:", min_value=0, max_value=100, value=1)
-    # number2 = st.number_input("Maximum number of variable modifications:", min_value=0, max_value=100, value=0)
-    #
-    # checkbox3 = st.checkbox("N-term M excision", value=True)
-    # checkbox4 = st.checkbox("C carbamidomethylation", value=True)
-    # checkbox5 = st.checkbox("Ox(M)", value=False)
-    # checkbox6 = st.checkbox("Ac(N-term)", value=False)
-    # checkbox7 = st.checkbox("Phospho", value=False)
-    # checkbox8 = st.checkbox("K-GG", value=False)
-
     if not selected_data_files:
         st.warning('No data files selected')
 

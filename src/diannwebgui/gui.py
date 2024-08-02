@@ -275,7 +275,7 @@ def search_download_dialog(project: str, search: str):
         type="primary"
     )
 
-    if c2.button("Cancel", use_container_width=True, type="secondary", key="search_download_dialog_alternative_cancel"):
+    if c2.button("Cancel", use_container_width=True, type="secondary", key="search_download_dialog_cancel"):
         st.rerun()
 
 with t4:

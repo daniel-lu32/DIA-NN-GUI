@@ -130,7 +130,7 @@ def spec_lib_add_dialog():
 
 @st.experimental_dialog(f"Are you sure you want to delete these spectral libraries?")
 def spec_lib_delete_dialog(project: str, selected_file: List[str]):
-    st.dataframe({'Data Files': selected_file}, use_container_width=True, hide_index=True, key='spec_lib_delete_dialog_df')
+    st.dataframe({'Spectral Libraries': selected_file}, use_container_width=True, hide_index=True, key='spec_lib_delete_dialog_df')
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="secondary", key="speclib_delete_dialog_confirm"):
         for file_name in selected_file:

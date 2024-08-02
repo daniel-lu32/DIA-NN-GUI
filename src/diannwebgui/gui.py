@@ -103,7 +103,7 @@ with t2:
         st.subheader("Data Files")
         st.markdown("Click \"Add\" to upload data files. To delete, select data files and click \"Delete.\" To download, select ONE data file and click \"Download.\"")
         df = pd.DataFrame(fs.list_data_files(selected_project), columns=['Name'])
-        selection = st.dataframe(df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key='datafiles_df')
+        selection = st.dataframe(df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key='data_files_df')
         selected_indices = [row for row in selection['selection']['rows']]
         selected_files = [df.iloc[i].Name for i in selected_indices]
 

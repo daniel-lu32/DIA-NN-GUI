@@ -178,15 +178,12 @@ with t3:
 @st.experimental_dialog("Add Search", width='large')
 def search_add_dialog(project: str):
 
-    data_df = pd.DataFrame(fs.list_data_files(selected_project), columns=['Name'])
-    spec_lib_df = pd.DataFrame(fs.list_spec_lib_files(selected_project), columns=['Name'])
+    data_df = pd.DataFrame(fs.list_data_files(project), columns=['Name'])
+    spec_lib_df = pd.DataFrame(fs.list_spec_lib_files(project), columns=['Name'])
 
     search_name = st.text_input("Search Name:")
 
     t1, t2, t3 = st.tabs(['Search Parameters', 'Data Files', 'Spectral Libraries'])
-
-    selected_data_files = []
-    selected_spec_lib = None
 
     with t1:
         search_parameters = {}
@@ -243,8 +240,8 @@ def search_add_dialog(project: str):
 
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="primary", key="search_add_dialog_confirm", disabled= not selected_data_files or not search_name or not selected_spec_lib):
-        fs.add_search(selected_project, search_name, search_parameters, selected_data_files, selected_spec_lib)
-        fs.run_search(selected_project, search_name)
+        fs.add_search(project, search_name, search_parameters, selected_data_files, selected_spec_lib)
+        fs.run_search(project, search_name)
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="secondary", key="search_add_dialog_cancel"):
         st.rerun()

@@ -226,7 +226,7 @@ def search_add_dialog(project: str):
         selected_indices = [row for row in selection['selection']['rows']]
         selected_spec_lib = [spec_lib_df.iloc[i].Name for i in selected_indices]
         if len(selected_spec_lib) == 1:
-             selected_spec_lib= selected_spec_lib[0]
+             selected_spec_lib = selected_spec_lib[0]
 
     if not selected_data_files:
         st.warning('No data files selected')

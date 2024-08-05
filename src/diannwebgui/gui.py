@@ -214,7 +214,7 @@ def search_add_dialog(project: str):
         search_parameters['cross-run_normalization'] = c1.selectbox("Cross-Run Normalization:", options=["RT-dependent", "Global", "RT & signal-dep. (experimental)", "Off"])
         search_parameters['library_generation'] = c2.selectbox("Library Generation:", options=["IDs, RT & IM profiling", "IDs profiling", "Smart profiling", "Full profiling"])
         search_parameters['speed_and_ram_usage'] = c3.selectbox("Speed and RAM Usage", options=["Optimal results", "Low RAM usage", "Low RAM & high speed", "Ultra-fast"])
-        search_parameters['additional_options'] = st.text_area("Additional Options:", '')
+        search_parameters['additional_options'] = st.text_area("Additional Options:")
 
     with t2:
         selection = st.dataframe(data_df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key='search_datafiles_df')

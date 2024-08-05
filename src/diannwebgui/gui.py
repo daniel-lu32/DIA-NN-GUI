@@ -174,7 +174,6 @@ with t3:
         if c2.button("Download", use_container_width=True, type="secondary", key="spec_lib_download", disabled=len(selected_files)!=1):
             spec_lib_download_dialog(selected_project, selected_files[0])
 
-
 @st.experimental_dialog("Add Search", width='large')
 def search_add_dialog(project: str):
 

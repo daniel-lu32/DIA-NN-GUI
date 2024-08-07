@@ -7,7 +7,7 @@ authors = [
     {name = "Patrick Garrett", email = "pgarrett@scripps.edu"},
     {name = "Daniel Lu", email = "dalu@scripps.edu"},
 ]
-description = "bla bla bla"
+description = ""
 readme = "README.md"
 requires-python = ">=3.8"
 dynamic = ["version"]

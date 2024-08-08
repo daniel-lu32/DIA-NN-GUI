@@ -6,18 +6,20 @@ from login import login
 
 login()
 
-if 'selected_files' not in st.session_state:
+if "selected_files" not in st.session_state:
     st.session_state.selected_files = []
-if 'file_data' not in st.session_state:
+if "file_data" not in st.session_state:
     st.session_state.file_data = {}
 
 st.title("DIA-NN GUI")
 
 file_system = "sftp"
+
 if st.session_state.username == "debug":
     file_system = "osf"
     
 fs = get_fs(st.session_state['server_ip'], st.session_state['username'], st.session_state['password'], file_system)
+
 selected_project = st.selectbox("Select Project:", options=fs.list_projects())
 
 t1, t2, t3, t4, t5 = st.tabs(["Projects", "Data Files", "Spectral Libraries", "Searches", "View Results"])
@@ -33,12 +35,12 @@ def projects_add_dialog():
         st.rerun()
 
 @st.experimental_dialog(f"Are you sure you want to delete these projects?")
-def projects_delete_dialog(selected_projects: List[str]):
-    st.dataframe({'Name':selected_projects}, use_container_width=True, hide_index=True, key="project_delete_df")
+def projects_delete_dialog(projects: List[str]):
+    st.dataframe({'Projects':projects}, use_container_width=True, hide_index=True, key="projects_delete_dialog_df")
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="secondary", key="projects_delete_dialog_confirm"):
-        for project_name in selected_projects:
-            fs.remove_project(project_name)
+        for project in projects:
+            fs.remove_project(project)
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="primary", key="projects_delete_dialog_cancel"):
         st.rerun()
@@ -62,48 +64,40 @@ def data_add_dialog(project: str):
     data_files = st.file_uploader(label="Upload Data Files", type=[".dia", ".tar", ".zip", ".raw"], accept_multiple_files=True)
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="primary", key="data_add_dialog_confirm"):
-        for file in data_files:
-            fs.add_data_file(project, file.name, file.getvalue())
+        for data_file in data_files:
+            fs.add_data(project, data_file.name, data_file.getvalue())
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="secondary", key="data_add_dialog_cancel"):
         st.rerun()
 
 @st.experimental_dialog(f"Are you sure you want to delete these data files?")
-def data_delete_dialog(project: str, selected_file: str):
-    st.dataframe({'Data Files': selected_file}, use_container_width=True, hide_index=True, key="data_delete_dialog_df")
+def data_delete_dialog(project: str, data_files: List[str]):
+    st.dataframe({'Data Files': data_files}, use_container_width=True, hide_index=True, key="data_delete_dialog_df")
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="secondary", key="data_delete_dialog_confirm"):
-        for file_name in selected_file:
-            fs.remove_data_file(project, file_name)
+        for data_file in data_files:
+            fs.remove_data(project, data_file)
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="primary", key="data_delete_dialog_cancel"):
         st.rerun()
 
 @st.experimental_dialog("Download Data File")
-def data_download_dialog(project: str, selected_file: str):
-    new_file_name = st.text_input("Rename File and Press Enter (Include File Extension):", value=selected_file)
+def data_download_dialog(project: str, data_file: str):
+    new_file_name = st.text_input("Rename File and Press Enter (Include File Extension):", value=data_file)
     c1, c2 = st.columns(2)
-    file_data = fs.get_data_file_contents(project, selected_file)
+    file_data = fs.get_data_contents(project, data_file)
 
-    c1.download_button(label=f"Download",
-                            data=file_data,
-                            file_name=new_file_name,
-                            mime="application/octet-stream",
-                            key=f"data_{new_file_name}",
-                            use_container_width=True,
-                            type="primary"
-                        )
-    
+    c1.download_button(label=f"Download", data=file_data, file_name=new_file_name, mime="application/octet-stream", key=f"data_{new_file_name}", use_container_width=True, type="primary")
+
     if c2.button("Cancel", use_container_width=True, type="secondary", key="data_download_dialog_cancel"):
         st.rerun()
-    
 
 with t2:
     if fs.list_projects():
         st.subheader("Data Files")
         st.markdown("Click \"Add\" to upload data files. To delete, select data files and click \"Delete.\" To download, select ONE data file and click \"Download.\"")
-        df = pd.DataFrame(fs.list_data_files(selected_project), columns=['Name'])
-        selection = st.dataframe(df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key="data_files_df")
+        df = pd.DataFrame(fs.list_data(selected_project), columns=['Name'])
+        selection = st.dataframe(df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key="data_df")
         selected_indices = [row for row in selection['selection']['rows']]
         selected_files = [df.iloc[i].Name for i in selected_indices]
 
@@ -116,51 +110,44 @@ with t2:
         if c2.button("Download", use_container_width=True, type="secondary", key="data_download", disabled=len(selected_files) != 1):
             data_download_dialog(selected_project, selected_files[0])
 
-
 @st.experimental_dialog("Add Spectral Libraries")
-def spec_lib_add_dialog():
-    spec_lib_files = st.file_uploader(label="Upload Spectral Libraries", type=[".txt", ".csv", ".tsv", ".xls", ".speclib", ".sptxt", ".msp"], accept_multiple_files=True)
+def spec_lib_add_dialog(project: str):
+    spec_libs = st.file_uploader(label="Upload Spectral Libraries", type=[".txt", ".csv", ".tsv", ".xls", ".speclib", ".sptxt", ".msp"], accept_multiple_files=True)
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="primary", key="spec_lib_add_dialog_confirm"):
-        for file in spec_lib_files:
-            fs.add_spec_lib(selected_project, file.name, file.getvalue())
+        for spec_lib in spec_libs:
+            fs.add_spec_lib(project, spec_lib.name, spec_lib.getvalue())
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="secondary", key="spec_lib_add_dialog_cancel"):
         st.rerun()
 
 @st.experimental_dialog(f"Are you sure you want to delete these spectral libraries?")
-def spec_lib_delete_dialog(project: str, selected_file: List[str]):
-    st.dataframe({'Spectral Libraries': selected_file}, use_container_width=True, hide_index=True, key="spec_lib_delete_dialog_df")
+def spec_lib_delete_dialog(project: str, spec_libs: List[str]):
+    st.dataframe({'Spectral Libraries': spec_libs}, use_container_width=True, hide_index=True, key="spec_lib_delete_dialog_df")
     c1, c2 = st.columns(2)
-    if c1.button("Confirm", use_container_width=True, type="secondary", key="speclib_delete_dialog_confirm"):
-        for file_name in selected_file:
-            fs.remove_spec_lib(project, file_name)
+    if c1.button("Confirm", use_container_width=True, type="secondary", key="spec_lib_delete_dialog_confirm"):
+        for spec_lib in spec_libs:
+            fs.remove_spec_lib(project, spec_lib)
         st.rerun()
-    if c2.button("Cancel", use_container_width=True, type="primary", key="speclib_delete_dialog_cancel"):
+    if c2.button("Cancel", use_container_width=True, type="primary", key="spec_lib_delete_dialog_cancel"):
         st.rerun()
 
 @st.experimental_dialog("Download Spectral Library")
-def spec_lib_download_dialog(project: str, selected_file: str):
-    new_file_name = st.text_input("Rename File and Press Enter (Include File Extension):", value=selected_file)
+def spec_lib_download_dialog(project: str, spec_lib: str):
+    new_file_name = st.text_input("Rename File and Press Enter (Include File Extension):", value=spec_lib)
     c1, c2 = st.columns(2)
-    file_data = fs.get_spec_lib_contents(project, selected_file)
-    c1.download_button(label=f"Download",
-                            data=file_data,
-                            file_name=new_file_name,
-                            mime="application/octet-stream",
-                            key=f"speclib_{new_file_name}",
-                            use_container_width=True,
-                            type="primary"
-                        )
+    file_data = fs.get_spec_lib_contents(project, spec_lib)
+
+    c1.download_button(label=f"Download", data=file_data, file_name=new_file_name, mime="application/octet-stream", key=f"spec_lib_{new_file_name}", use_container_width=True, type="primary")
     
-    if c2.button("Cancel", use_container_width=True, type="secondary", key="speclib_download_dialog_cancel"):
+    if c2.button("Cancel", use_container_width=True, type="secondary", key="spec_lib_download_dialog_cancel"):
         st.rerun()
 
 with t3:
     if fs.list_projects():
         st.subheader("Spectral Libraries")
         st.markdown("Click \"Add\" to upload spectral libraries. To delete, select spectral libraries and click \"Delete.\" To download, select ONE spectral library and click \"Download.\"")
-        df = pd.DataFrame(fs.list_spec_lib_files(selected_project), columns=['Name'])
+        df = pd.DataFrame(fs.list_spec_lib(selected_project), columns=['Name'])
         selection = st.dataframe(df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select='rerun', key="spec_lib_df")
         selected_indices = [row for row in selection['selection']['rows']]
         selected_files = [df.iloc[i].Name for i in selected_indices]
@@ -177,8 +164,8 @@ with t3:
 @st.experimental_dialog("Add Search", width="large")
 def search_add_dialog(project: str):
 
-    data_df = pd.DataFrame(fs.list_data_files(project), columns=['Name'])
-    spec_lib_df = pd.DataFrame(fs.list_spec_lib_files(project), columns=['Name'])
+    data_df = pd.DataFrame(fs.list_data(project), columns=['Name'])
+    spec_lib_df = pd.DataFrame(fs.list_spec_lib(project), columns=['Name'])
 
     search_name = st.text_input("Search Name:")
 
@@ -217,40 +204,40 @@ def search_add_dialog(project: str):
         search_parameters['additional_options'] = st.text_area("Additional Options:")
 
     with t2:
-        selection = st.dataframe(data_df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key="search_datafiles_df")
+        selection = st.dataframe(data_df, use_container_width=True, hide_index=True, selection_mode="multi-row", on_select="rerun", key="search_data_df")
         selected_indices = [row for row in selection['selection']['rows']]
-        selected_data_files = [data_df.iloc[i].Name for i in selected_indices]
+        selected_data = [data_df.iloc[i].Name for i in selected_indices]
 
     with t3:
-        selection = st.dataframe(spec_lib_df, use_container_width=True, hide_index=True, selection_mode="single-row", on_select="rerun", key="search_speclib_df")
+        selection = st.dataframe(spec_lib_df, use_container_width=True, hide_index=True, selection_mode="single-row", on_select="rerun", key="search_spec_lib_df")
         selected_indices = [row for row in selection['selection']['rows']]
         selected_spec_lib = [spec_lib_df.iloc[i].Name for i in selected_indices]
         if len(selected_spec_lib) == 1:
              selected_spec_lib = selected_spec_lib[0]
 
-    if not selected_data_files:
-        st.warning("No data files selected")
+    if not selected_data:
+        st.warning("No data files selected!")
 
     if not search_name:
-        st.warning("No search name")
+        st.warning("No search name!")
 
     if not selected_spec_lib:
-        st.warning("No spec lib selected")
+        st.warning("No spectral libraries selected!")
 
     c1, c2 = st.columns(2)
-    if c1.button("Confirm", use_container_width=True, type="primary", key="search_add_dialog_confirm", disabled= not selected_data_files or not search_name or not selected_spec_lib):
-        fs.add_search(project, search_name, search_parameters, selected_data_files, selected_spec_lib)
+    if c1.button("Confirm", use_container_width=True, type="primary", key="search_add_dialog_confirm", disabled= not selected_data or not search_name or not selected_spec_lib):
+        fs.add_search(project, search_name, search_parameters, selected_data, selected_spec_lib)
         fs.run_search(project, search_name)
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="secondary", key="search_add_dialog_cancel"):
         st.rerun()
 
 @st.experimental_dialog(f"Are you sure you want to delete these searches?")
-def search_delete_dialog(project: str, selected_searches: List[str]):
-    st.dataframe({'Name': selected_searches}, use_container_width=True, hide_index=True, key="search_delete_dialog_df")
+def search_delete_dialog(project: str, searches: List[str]):
+    st.dataframe({'Searches': searches}, use_container_width=True, hide_index=True, key="search_delete_dialog_df")
     c1, c2 = st.columns(2)
     if c1.button("Confirm", use_container_width=True, type="secondary", key="search_delete_dialog_confirm"):
-        for search in selected_searches:
+        for search in searches:
             fs.remove_search(project, search)
         st.rerun()
     if c2.button("Cancel", use_container_width=True, type="primary", key="search_delete_dialog_cancel"):
@@ -261,15 +248,8 @@ def search_download_dialog(project: str, search: str):
     zip_name = st.text_input("Rename Zip and Press Enter (.zip):", value=f"{search}_results.zip")
     c1, c2 = st.columns(2)
     zip_buffer = fs.get_results_contents(project, search)
-    c1.download_button(
-        label="Download Zip",
-        data=zip_buffer,
-        file_name=zip_name,
-        mime="application/zip",
-        key=f"search_{zip_name}",
-        use_container_width=True,
-        type="primary"
-    )
+
+    c1.download_button(label="Download Zip", data=zip_buffer, file_name=zip_name, mime="application/zip", key=f"search_{zip_name}", use_container_width=True, type="primary")
 
     if c2.button("Cancel", use_container_width=True, type="secondary", key="search_download_dialog_cancel"):
         st.rerun()
@@ -306,4 +286,4 @@ with t5:
             if st.button("View", use_container_width=True, type="primary", key="results_view"):
                 for file in selected_files:
                     st.caption(file)
-                    st.dataframe(data=fs.get_results_file_contents(selected_project, selected_search, file), use_container_width=True, hide_index=True, key="results_view_df")
+                    st.dataframe(data=fs.get_results_file_contents(selected_project, selected_search, file), use_container_width=True, hide_index=True, key=f"results_{file}_df")

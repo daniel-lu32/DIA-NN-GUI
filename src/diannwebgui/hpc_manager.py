@@ -38,7 +38,7 @@ class RemoteProjectFileSystem:
 
         self.project_fs = home_fs.opendir("projects")
 
-    def get_data_file_contents(self, project_name: str, file_name: str) -> bytes:
+    def get_data_contents(self, project_name: str, file_name: str) -> bytes:
         file_path = f"{project_name}/data/{file_name}"
         with self.project_fs.open(file_path, 'rb') as file:
             return file.read()
@@ -82,7 +82,7 @@ class RemoteProjectFileSystem:
     def list_projects(self) -> List[str]:
         return self.project_fs.listdir(".")
 
-    def add_data_file(self, project_name: str, file_name: str, data: bytes):
+    def add_data(self, project_name: str, file_name: str, data: bytes):
         data_path = f"{project_name}/data/{file_name}"
         if not self.project_fs.exists(f"{project_name}/data"):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'data' directory.")
@@ -90,14 +90,14 @@ class RemoteProjectFileSystem:
         with self.project_fs.open(data_path, 'wb') as data_file:
             data_file.write(data)
 
-    def remove_data_file(self, project_name: str, file_name: str):
+    def remove_data(self, project_name: str, file_name: str):
         data_path = f"{project_name}/data/{file_name}"
         if not self.project_fs.exists(data_path):
             raise ResourceNotFound(f"Data file '{file_name}' not found in project '{project_name}'.")
 
         self.project_fs.remove(data_path)
 
-    def list_data_files(self, project_name: str) -> List[str]:
+    def list_data(self, project_name: str) -> List[str]:
         data_dir = f"{project_name}/data"
         if not self.project_fs.exists(data_dir):
             raise ResourceNotFound(f"No data directory found for project '{project_name}'.")
@@ -118,7 +118,7 @@ class RemoteProjectFileSystem:
 
         self.project_fs.remove(spec_lib_path)
 
-    def list_spec_lib_files(self, project_name: str) -> List[str]:
+    def list_spec_lib(self, project_name: str) -> List[str]:
         spec_lib_dir = f"{project_name}/spec_lib"
         if not self.project_fs.exists(spec_lib_dir):
             raise ResourceNotFound(f"No spectral library directory found for project '{project_name}'.")

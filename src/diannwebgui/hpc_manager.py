@@ -40,23 +40,22 @@ class RemoteProjectFileSystem:
 
     def get_data_contents(self, project_name: str, file_name: str) -> bytes:
         file_path = f"{project_name}/data/{file_name}"
-        with self.project_fs.open(file_path, 'rb') as file:
+        with self.project_fs.open(file_path, "rb") as file:
             return file.read()
 
     def get_spec_lib_contents(self, project_name: str, file_name: str) -> bytes:
         file_path = f"{project_name}/spec_lib/{file_name}"
-        with self.project_fs.open(file_path, 'rb') as file:
+        with self.project_fs.open(file_path, "rb") as file:
             return file.read()
 
     def get_results_contents(self, project_name: str, search_name: str) -> bytes:
-
         directory_path = f"{project_name}/search/{search_name}"
 
         zip_buffer = io.BytesIO()
         with ZipFS(zip_buffer, write=True) as zip_fs:
             for file_name in self.project_fs.listdir(directory_path):
                 file_path = f"{directory_path}/{file_name}"
-                with self.project_fs.open(file_path, 'rb') as file:
+                with self.project_fs.open(file_path, "rb") as file:
                     file_contents = file.read()
                     zip_fs.writebytes(file_name, file_contents)
 
@@ -87,7 +86,7 @@ class RemoteProjectFileSystem:
         if not self.project_fs.exists(f"{project_name}/data"):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'data' directory.")
 
-        with self.project_fs.open(data_path, 'wb') as data_file:
+        with self.project_fs.open(data_path, "wb") as data_file:
             data_file.write(data)
 
     def remove_data(self, project_name: str, file_name: str):
@@ -108,7 +107,7 @@ class RemoteProjectFileSystem:
         if not self.project_fs.exists(f"{project_name}/spec_lib"):
             raise ResourceNotFound(f"Project '{project_name}' does not exist or has no 'spec_lib' directory.")
 
-        with self.project_fs.open(spec_lib_path, 'wb') as spec_lib_file:
+        with self.project_fs.open(spec_lib_path, "wb") as spec_lib_file:
             spec_lib_file.write(data)
 
     def remove_spec_lib(self, project_name: str, file_name: str):
@@ -125,31 +124,20 @@ class RemoteProjectFileSystem:
         return self.project_fs.listdir(spec_lib_dir)
 
     def add_search(self, project_name: str, search_name: str, data: Dict[str, Any], selected_data_files, selected_spec_lib):
-        project_dir = f"{project_name}"
         search_dir = f"{project_name}/search/{search_name}"
-
-        # Check if the project exists
-        if not self.project_fs.exists(project_dir):
-            raise ResourceNotFound(f"Project '{project_name}' does not exist.")
-
-        # Check if the search directory already exists
         if self.project_fs.exists(search_dir):
             raise DirectoryExists(f"Search '{search_name}' already exists in project '{project_name}'.")
 
-        # Create the search directory
         self.project_fs.makedir(search_dir, recreate=True)
 
-        # TODO: add command additions from the "Precursor Ion Generation" section of DIA-NN
         command = ""
 
         data_directory = f"{project_name}/data"
-        data_files = selected_data_files
-        for data_file in data_files:
+        for data_file in selected_data_files:
             command += f" --f {self._home_path}/projects/{data_directory}/{data_file}"
 
         spec_lib_directory = f"{project_name}/spec_lib"
-        spec_lib = selected_spec_lib
-        command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{spec_lib}"
+        command += f" --lib {self._home_path}/projects/{spec_lib_directory}/{selected_spec_lib}"
 
         command += " --verbose " + str(data['log_level'])
         command += f" --out {self._home_path}/projects/{search_dir}/report.tsv"
@@ -244,7 +232,7 @@ cd {self._home_path}/projects/{project_name}
         script_replaced = script.replace("\r\n", "\n").replace("\r", "\n")
         script_path = f"{project_name}/search/{search_name}/search_command.sh"
 
-        with self.project_fs.open(script_path, 'w') as search_command_file:
+        with self.project_fs.open(script_path, "w") as search_command_file:
             search_command_file.write(script_replaced)
 
     def run_search(self, project_name: str, search_name: str):
@@ -258,18 +246,10 @@ cd {self._home_path}/projects/{project_name}
         ssh.close()
 
     def remove_search(self, project_name: str, search_name: str):
-        project_dir = f"{project_name}"
         search_dir = f"{project_name}/search/{search_name}"
-
-        # Check if the project exists
-        if not self.project_fs.exists(project_dir):
-            raise ResourceNotFound(f"Project '{project_name}' does not exist.")
-
-        # Check if the search directory exists
         if not self.project_fs.exists(search_dir):
-            raise ResourceNotFound(f"Search '{search_name}' does not exist in project '{project_name}'.")
+            raise ResourceNotFound(f"Search '{search_name}' not found in project '{project_name}'.")
 
-        # Remove the search directory and its contents
         self.project_fs.removetree(search_dir)
 
     def list_searches(self, project_name: str) -> List[str]:
@@ -287,58 +267,13 @@ cd {self._home_path}/projects/{project_name}
     def get_results_file_contents(self, project_name: str, search_name: str, file_name: str) -> pd.DataFrame:
         file_path = f"{project_name}/search/{search_name}/{file_name}"
 
-        with self.project_fs.open(file_path, 'rb') as file:
+        with self.project_fs.open(file_path, "rb") as file:
             return pd.read_csv(io.BytesIO(file.read()), sep="\t")
 
 if __name__ == "__main__":
     """
     Testing only, will be not run with streamlit. Must run this file directly to run this code.
     """
-    # Connect to FTP server
     password = input("Enter password: ")
-
-    # Alternatively, connect to SFTP server
     pfs = RemoteProjectFileSystem('login02.scripps.edu', 'pgarrett', password, protocol='sftp')
-
-    # Create a new project with metadata
     pfs.create_project('project1')
-
-    # Add a data file to the project
-    pfs.add_data_file('project1', 'data1.txt', 'This is some sample data.')
-
-    # List all projects
-    projects = pfs.list_projects()
-    print(projects)
-
-    # List all data files in a project
-    data_files = pfs.list_data_files('project1')
-    print(data_files)
-
-    # Add a search to the project
-    try:
-        pfs.add_search('project1', 'search1', {'param1': 'value1', 'param2': 'value2'})
-    except Exception as e:
-        print(e)
-
-    # Attempt to add the same search to the project to test error handling
-    try:
-        pfs.add_search('project1', 'search1', {'param1': 'value1', 'param2': 'value2'})
-    except Exception as e:
-        print(e)
-
-    print(pfs.get_search_path('project1', 'search1'))
-
-    # Remove the search from the project
-    try:
-        pfs.remove_search('project1', 'search1')
-    except Exception as e:
-        print(e)
-
-    # Attempt to remove a non-existent search to test error handling
-    try:
-        pfs.remove_search('project1', 'search1')
-    except Exception as e:
-        print(e)
-
-    # Remove a project
-    pfs.remove_project('project1')
